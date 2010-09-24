@@ -46,7 +46,8 @@ device list defines some attributes which are used by each individual device.
 The attribute values are hierarchically inherited from the top to the bottom.
 For example, when the access driver looks for the **auth-password** attribute,
 it would be searched first in device class definition, then in its parent
-classes, then at the device list level, and finally at the job level.
+classes, then at the device list level, then at the job level, 
+and finally at the siteconfig level.
 
 
 Example of a job file:
@@ -207,5 +208,8 @@ Siteconfig is a directory with some predefined elements, as follows:
     Gerty extensions. Also some site globals could be defined here instead of
     the job definition file.
 *   `lib/Company/` -- optional path where Gerty looks for Perl modules
+*   `jobs/` -- preferred place for job definitions, although they can be 
+    stored anywhere.
+
 
 
