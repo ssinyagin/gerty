@@ -13,13 +13,13 @@ there's Cisco in its name, Gerty is different:
     we can do more.
 
 *   Pluggable architecture.
-    Some standarrd modules come with the main
+    Some standard modules come with the main
     distribution, some modules are distributed as plugins, and the user
     can add their own modules without messing up with the original files
     that were installed by Gerty and its plugins.
 
 *   Vendor neutrality.
-    We are not concentrarted on Cisco.
+    We are not concentrated on Cisco.
 
 *   Support for interactive processing.
     New CLI commands may depend on the output of previous ones
@@ -50,8 +50,6 @@ classes, then at the device list level, and finally at the job level.
 
 
 Example of a job file:
-
-* * * * *
 
     [job]
       ; in further examples, we refer to the company name as Company
@@ -168,17 +166,16 @@ Example of a job file:
       do-protocol-ldp = 1
       protocols-path = /srv/gerty/backbone/protocols
 
-* * * * *
-
 
 Directory structure
 -------------------
 
 The Gerty package installer delivers a number of standarrd directories and
 files, as described below. Here paths are relative to some standard prefix,
-such as `/usr/local` or `/opt/gerty`, depending on the server administration
-policy. The users and site administrators would never have a need to modify
-anything in them, and they would be overwritten by the package installer.
+such as `/usr/local` or `/opt/gerty`, or whatever the administrator used to 
+install the package.
+The users and site administrators would never have a need to modify
+anything in them, and the files would be overwritten by the package installer.
 
 
 *   `etc/gerty/` -- the directory which contains global Gerty package
