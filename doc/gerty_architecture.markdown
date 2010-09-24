@@ -53,120 +53,120 @@ Example of a job file:
 
 * * * * *
 
-  [job]
-    ; in further examples, we refer to the company name as Company
-    title = Company MPLS Backbone Routers
-    description = "Configs, LDP, and BGP statistics from core routers"
+    [job]
+      ; in further examples, we refer to the company name as Company
+      title = Company MPLS Backbone Routers
+      description = "Configs, LDP, and BGP statistics from core routers"
 
-    ; split the job among 10 child processes
-    parallel = 10
+      ; split the job among 10 child processes
+      parallel = 10
 
-    ; here Gerty looks for Company specific modules, such as device class
-    ; definitions or custom processing hooks
-    siteconfig = /opt/gerty/Company
+      ; here Gerty looks for Company specific modules, such as device class
+      ; definitions or custom processing hooks
+      siteconfig = /opt/gerty/Company
 
-    ; we use SSH globally everywhere
-    cli-access-method = ssh
-
-
-  [devices cisco-7600-pe]
-    description = "Cisco 7600 series as MPLS PE routers"
-
-    ; take the list of devices from a file.
-    ; alternatively this can be SQL or SOAP or whatever query
-    source-type = Gerty::Devlist::File
-
-    ; attributes specific to this source type
-    source-filename = /srv/gerty/backbone/nodelists/cisco7600pe
-
-    ; import devices from a plain text. Alternatively this could be XML or
-    ; some other format supported by Gerty::Devlist::File
-    source-filetype = plain
-
-    ; here we distinguish between the system name as it's stored in
-    ; Gerty output, its network address (could be a FQDN or IPv4/6 address),
-    ; and free-form device description. These elements are expected to
-    ; be separated with double slashes
-    source-lineformat = SYSNAME//ADDRESS//DESCRIPTION
-
-    ; device class defines all Gerty's behavior for these devices.
-    ; source can also define alternative device types
-    ; (DEVTYPE in source-lineformat)
-    devclass = Company.Cisco7600PE
+      ; we use SSH globally everywhere
+      cli-access-method = ssh
 
 
-  [devices juniper-mx-pe]
-    description = "Juniper MX series as MPLS PE routers"
+    [devices cisco-7600-pe]
+      description = "Cisco 7600 series as MPLS PE routers"
 
-    ; example of SQL import
-    source-type = Gerty::Devlist::DBI
+      ; take the list of devices from a file.
+      ; alternatively this can be SQL or SOAP or whatever query
+      source-type = Gerty::Devlist::File
 
-    ; Database connection attributes
-    source-dsn = DBI:mysql:database=inventory;host=dbhost
-    source-username = gerty
-    source-password = Ieweeph8ja
+      ; attributes specific to this source type
+      source-filename = /srv/gerty/backbone/nodelists/cisco7600pe
 
-    ; only a short SQL query for the sake of readability (INI format does not
-    ; allow multi-line values)
-    source-query = SELECT NODE, ADDR, DESCRIPTION FROM V_DEVLIST
+      ; import devices from a plain text. Alternatively this could be XML or
+      ; some other format supported by Gerty::Devlist::File
+      source-filetype = plain
 
-    ; tell Gerty positions in the result row
-    source-rowformat = SYSNAME, ADDRESS, DESCRIPTION
+      ; here we distinguish between the system name as it's stored in
+      ; Gerty output, its network address (could be a FQDN or IPv4/6 address),
+      ; and free-form device description. These elements are expected to
+      ; be separated with double slashes
+      source-lineformat = SYSNAME//ADDRESS//DESCRIPTION
 
-    devclass = Company.JuniperMXPE
+      ; device class defines all Gerty's behavior for these devices.
+      ; source can also define alternative device types
+      ; (DEVTYPE in source-lineformat)
+      devclass = Company.Cisco7600PE
 
 
-  ; This device class is defined right in the job file, although
-  ; siteconfig is the most appropriate location
-  [devclass Company.Cisco7600PE]
+    [devices juniper-mx-pe]
+      description = "Juniper MX series as MPLS PE routers"
 
-    ; properties from generic and Company specific modules
-    ; a rule of thumb: generic devclasses define a set of possible actions and
-    ; reports, but particular actions have to be activated here
-    inherit = Gerty.Cisco, Company.Generic
+      ; example of SQL import
+      source-type = Gerty::Devlist::DBI
 
-    ; this tells that we use admin privileges ("enable" in Cisco terminology)
-    admin-mode = 1
+      ; Database connection attributes
+      source-dsn = DBI:mysql:database=inventory;host=dbhost
+      source-username = gerty
+      source-password = Ieweeph8ja
 
-    ; access credentials are better to define in a Company-specific devclass,
-    ; but we define it here for simplicity.
+      ; only a short SQL query for the sake of readability (INI format does not
+      ; allow multi-line values)
+      source-query = SELECT NODE, ADDR, DESCRIPTION FROM V_DEVLIST
 
-    ; placeholder for other ways to retrieve passwords (a better way is to
-    ; store passwords externally, or even retrieve OTP from somewhere)
-    credentials-source = inline
+      ; tell Gerty positions in the result row
+      source-rowformat = SYSNAME, ADDRESS, DESCRIPTION
 
-    ; login credentials
-    auth-username = gerty
-    auth-password = eeDie6louj
+      devclass = Company.JuniperMXPE
 
-    ; enable password is used by "Gerty.Cisco" and only when admin-mode is true
-    auth-epassword = Ieyei5ofej
 
-    ;;; enable the actions (they are defined in modules like "Gerty.Cisco")
+    ; This device class is defined right in the job file, although
+    ; siteconfig is the most appropriate location
+    [devclass Company.Cisco7600PE]
 
-    ; "do-config-backup" is a standard action name, implemented differently
-    ; for various vendor types. It also requires a number of attributes
-    ; that define the storage
-    do-config-backup = 1
-    config-backup-path = /srv/gerty/backbone/cfgbackup
+      ; properties from generic and Company specific modules
+      ; a rule of thumb: generic devclasses define a set of possible actions 
+      ; and reports, but particular actions have to be activated here
+      inherit = Gerty.Cisco, Company.Generic
 
-    ; actually postprocessing would be better defined in siteconfig,
-    ; but we place it here for simplicity
-    config-backup-postprocess = Gerty::Postprocess::Subversion, Company::Postprocess
+      ; this tells that we use admin privileges ("enable" in Cisco terminology)
+      admin-mode = 1
 
-    ; "sh ver", "sh module", etc. It is an interactive script,
-    ; doing additional disagostics depending on HW type
-    do-cisco-diags = 1
+      ; access credentials are better to define in a Company-specific devclass,
+      ; but we define it here for simplicity.
 
-    ; store this separately from configuration
-    cisco-diags-path = /srv/gerty/backbone/diag
+      ; placeholder for other ways to retrieve passwords (a better way is to
+      ; store passwords externally, or even retrieve OTP from somewhere)
+      credentials-source = inline
 
-    ; routing protocols statistics
-    do-protocol-bgp = 1
-    do-protocol-isis = 1
-    do-protocol-ldp = 1
-    protocols-path = /srv/gerty/backbone/protocols
+      ; login credentials
+      auth-username = gerty
+      auth-password = eeDie6louj
 
+      ; enable password is used by "Gerty.Cisco" and only when 
+      ; admin-mode is true
+      auth-epassword = Ieyei5ofej
+
+      ;;; enable the actions (they are defined in modules like "Gerty.Cisco")
+
+      ; "do-config-backup" is a standard action name, implemented differently
+      ; for various vendor types. It also requires a number of attributes
+      ; that define the storage
+      do-config-backup = 1
+      config-backup-path = /srv/gerty/backbone/cfgbackup
+
+      ; actually postprocessing would be better defined in siteconfig,
+      ; but we place it here for simplicity
+      config-backup-postprocess = Gerty::Postprocess::Subversion, Company::Postprocess
+
+      ; "sh ver", "sh module", etc. It is an interactive script,
+      ; doing additional disagostics depending on HW type
+      do-cisco-diags = 1
+
+      ; store this separately from configuration
+      cisco-diags-path = /srv/gerty/backbone/diag
+
+      ; routing protocols statistics
+      do-protocol-bgp = 1
+      do-protocol-isis = 1
+      do-protocol-ldp = 1
+      protocols-path = /srv/gerty/backbone/protocols
 
 * * * * *
 
