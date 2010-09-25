@@ -67,6 +67,8 @@ Example of a job file:
       ; we use SSH globally everywhere
       cli-access-method = ssh
 
+      ; example of a user-defined variable
+      backbone-data = /srv/gerty/backbone
 
     [devices cisco-7600-pe]
       description = "Cisco 7600 series as MPLS PE routers"
@@ -76,7 +78,7 @@ Example of a job file:
       source-type = Gerty::Devlist::File
 
       ; attributes specific to this source type
-      source-filename = /srv/gerty/backbone/nodelists/cisco7600pe
+      source-filename = ${backbone-data}/nodelists/cisco7600pe
 
       ; import devices from a plain text. Alternatively this could be XML or
       ; some other format supported by Gerty::Devlist::File
@@ -148,7 +150,7 @@ Example of a job file:
       ; for various vendor types. It also requires a number of attributes
       ; that define the storage
       do-config-backup = 1
-      config-backup-path = /srv/gerty/backbone/cfgbackup
+      config-backup-path = ${backbone-data}/cfgbackup
 
       ; actually postprocessing would be better defined in siteconfig,
       ; but we place it here for simplicity
@@ -159,13 +161,13 @@ Example of a job file:
       do-cisco-diags = 1
 
       ; store this separately from configuration
-      cisco-diags-path = /srv/gerty/backbone/diag
+      cisco-diags-path = ${backbone-data}/diag
 
       ; routing protocols statistics
       do-protocol-bgp = 1
       do-protocol-isis = 1
       do-protocol-ldp = 1
-      protocols-path = /srv/gerty/backbone/protocols
+      protocols-path = ${backbone-data}/protocols
 
 
 Directory structure
