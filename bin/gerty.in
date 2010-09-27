@@ -1,0 +1,163 @@
+#!@PERL@
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+
+# Gerty CLI front-end launcher
+
+use lib(@perllibdirs@);
+use strict;
+use warnings;
+use Getopt::Long;
+use Log::Handler;
+
+# command-line comands. This hash array can be extended by plugins
+%Gerty::cli_registry =
+    (
+     'run' => 1,
+     'install_plugin' => 1,
+     );
+
+
+# Read plugin configurations
+{
+    my $dir = '@plugindir@';
+    opendir(CFGDIR, $dir) or die("Cannot open directory $dir: $!");
+    my @files = grep { /\.cli\.pl$/ } readdir(CFGDIR);
+    closedir( CFGDIR );
+    foreach my $file ( @files )
+    {
+        require $dir . '/' . $file;
+    }
+}
+
+
+# Initialize CLI modules
+{
+    foreach my $cmd ( sort keys %Gerty::cli_registry )
+    {
+        my $cli_class = 'Gerty::CLI::' . $cmd;
+        eval(sprintf('require %s', $cli_class));
+        if( $@ )
+        {
+            print STDERR "Error loading " . $cli_class . ": " . $@ . "\n";
+            exit 1;
+        }
+
+        eval(sprintf('$Gerty::cli_registry{%s} = $%s::cli_registry_entry',
+                     $cmd, $cli_class));
+        if( $@ )
+        {
+            print STDERR "Error initializing " . $cli_class . ": " . $@ . "\n";
+            exit 1;
+        }
+    }
+}
+        
+
+
+my $ok = 1;
+my $cmd = shift @ARGV;
+if( not defined $cmd )
+{
+    $ok = 0;
+}
+elsif( not defined( $Gerty::cli_registry{$cmd} ) )
+{
+    $ok = 0;
+    print STDERR "Unknown command: $cmd\n";
+}
+
+if( not $ok )
+{
+    print STDERR
+        "Usage: $0 CMD [options]...\n",
+        "Available commands:\n",
+        "    " . join("\n    ", sort keys %Gerty::cli_registry) . "\n",
+        "Common options:\n",
+        "    --verbose       print extra diagnostics\n",
+        "    --debug         print debugging information\n",
+        "    --help          print the command usage help text\n";
+    
+    exit 1;
+}
+
+
+my $debug = 0;
+my $verbose = 0;
+my $help_needed;
+
+$ok = GetOptions(
+                 'verbose'     => \$verbose,
+                 'debug'       => \$debug,
+                 'help'        => \$help_needed,
+                 %{$Gerty::cli_registry{$cmd}{'opts'}}
+                 );
+
+if( not $ok or $help_needed or
+    scalar( @ARGV ) != $Gerty::cli_registry{$cmd}{'arguments'} )
+{
+    print STDERR $Gerty::cli_registry{$cmd}{'help'} . "\n";
+    exit 1;
+}
+
+
+# Set up logging
+$Gerty::log = new Log::Handler;
+    (
+     );
+
+
+
+if( $debug )
+{
+    $Gerty::log->add
+        ( screen => {
+            log_to   => "STDERR",
+            maxlevel => "debug",
+            minlevel => "emergency",
+        });
+}
+elsif( $verbose )
+{
+    $Gerty::log->add
+        ( screen => {
+            log_to   => "STDERR",
+            maxlevel => "info",
+            minlevel => "emergency",
+        });    
+}
+else
+{
+    $Gerty::log->add
+        ( screen => {
+            log_to   => "STDERR",
+            maxlevel => "warning",
+            minlevel => "emergency",
+        });    
+}
+
+
+$ok = &{$Gerty::cli_registry{$cmd}{'execute'}}( @ARGV );
+
+exit($ok ? 0:1);
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

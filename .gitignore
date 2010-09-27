@@ -1,0 +1,14 @@
+*.swp
+DIST_REVISION
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache
+bin/gerty
+config.log
+config.status
+configure
+configure.lineno
+gerty-*.tar.gz
+setup_tools/install_variables
+setup_tools/substvars.sh

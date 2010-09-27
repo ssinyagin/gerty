@@ -181,15 +181,15 @@ The users and site administrators would never have a need to modify
 anything in them, and the files would be overwritten by the package installer.
 
 
-*   `etc/gerty/` -- the directory which contains global Gerty package
-    configuration and information about installed plugins.
-*   `lib/Gerty/` -- the directory with Perl modules that are installed
+*   `lib/perl/Gerty/` -- the directory with Perl modules that are installed
     by Gerty installer and plugins
 *   `bin/gerty` -- the only user executable. It dispatches the calls to
     various functionality modules. Plugins can also add new subcommands and
     options.
 *   `share/gerty/devclasses/` -- the directory with INI files that define
     predefined device classes, such as `Gerty.Cisco.ini`
+*   `share/gerty/plugins` -- the directory where the plugin installers put 
+    their configuration files
 
 
 Everything that a local user or the server administrator would need to define
