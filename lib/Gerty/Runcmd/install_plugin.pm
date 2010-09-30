@@ -13,36 +13,29 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 
-# Gerty command that executes a job
+# Gerty command that installs a plugin
 
-package Gerty::CLI::run;
+package Gerty::Runcmd::install_plugin;
 
-our $cli_registry_entry = {
+$Gerty::cmd_registry{'install_plugin'} = {
     'opts' => {},
     'arguments' => 1,
     'execute' => \&execute,
     'help' =>
         "Usage: \n" .
-        "  gerty run [options] JOB.ini\n" .
-        "The command executes the Gerty job in accordance with the \n" .
-        "job definition file.\n",
+        "  gerty install_plugin DIR\n" .
+        "The command installs a Gerty plugin (you need write permissions\n" .
+        "for Gerty library directories)\n",
     };
 
 
 
 sub execute
 {
-    my $jobfile = shift;
-    $Gerty::log->info('Starting Gerty job: ' . $jobfile);
-
-    if( not -r $jobfile )
-    {
-        $Gerty::log->critical('No such file or directory: ' . $jobfile);
-        return 0;
-    }
-
-    return 1;
+    my $plugindir = shift;
+    $Gerty::log->critical('This command is not yet impplemented');
 }
+
 
 
 1;

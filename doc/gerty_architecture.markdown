@@ -46,11 +46,12 @@ device list defines some attributes which are used by each individual device.
 The attribute values are hierarchically inherited from the top to the bottom.
 For example, when the access driver looks for the **auth-password** attribute,
 it would be searched first in device class definition, then in its parent
-classes, then at the device list level, then at the job level, 
-and finally at the siteconfig level.
+classes, then at the device list level, then at the siteconfig level,
+and finally at the job level, 
 
 
-Example of a job file:
+
+Example of a job file (**/opt/gerty/Company/jobs/backbone.job.ini**):
 
     [job]
       ; in further examples, we refer to the company name as Company
@@ -69,6 +70,11 @@ Example of a job file:
 
       ; example of a user-defined variable
       backbone-data = /srv/gerty/backbone
+      
+      ; refer to the device lists defined in siteconfigs
+      devlists = cisco-7600-pe, juniper-mx-pe
+      
+Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
 
     [devices cisco-7600-pe]
       description = "Cisco 7600 series as MPLS PE routers"
@@ -116,9 +122,9 @@ Example of a job file:
 
       devclass = Company.JuniperMXPE
 
+Example of a devclass file 
+(**/opt/gerty/Company/devclases/Company.Cisco7600PE.ini**):
 
-    ; This device class is defined right in the job file, although
-    ; siteconfig is the most appropriate location
     [devclass Company.Cisco7600PE]
 
       ; properties from generic and Company specific modules
@@ -152,8 +158,6 @@ Example of a job file:
       do-config-backup = 1
       config-backup-path = ${backbone-data}/cfgbackup
 
-      ; actually postprocessing would be better defined in siteconfig,
-      ; but we place it here for simplicity
       config-backup-postprocess = Gerty::Postprocess::Subversion, Company::Postprocess
 
       ; "sh ver", "sh module", etc. It is an interactive script,
