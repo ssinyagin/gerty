@@ -37,9 +37,15 @@ C<perl -I `pwd`/setup_tools -MCPANPLUS -e 'install Bundle::Gerty'>
 
 =head1 CONTENTS
 
+Config::Tiny
+
 Config::Any
 
 Log::Handler
+
+Expect
+
+Date::Format
 
 =head1 AUTHOR
 

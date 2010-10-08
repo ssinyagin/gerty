@@ -16,7 +16,7 @@
 
 #
 
-SUBDIRS = . bin lib
+SUBDIRS = . bin lib share
 
 EXTRA_DIST = \
 	setup_tools/Bundle/Gerty.pm

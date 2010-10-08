@@ -26,6 +26,8 @@ AM_INIT_AUTOMAKE(1.9)
 AC_PATH_PROG(PERL, perl, no)
 AC_PATH_PROG(SED, sed, no)
 AC_PATH_PROG(RM, rm, no)
+AC_PATH_PROG(TELNET, telnet, no)
+AC_PATH_PROG(SSH, ssh, no)
 
 
 AC_ARG_ENABLE(pkgonly,
@@ -52,7 +54,8 @@ AC_SUBST(perllibdirs, [${perllibdirs}])
 
 if test "$enable_pkgonly" != yes; then
 
-   for module in 'Config::Any' 'Log::Handler'
+   for module in 'Config::Tiny' 'Config::Any' 'Log::Handler' \
+       'Expect' 'Date::Format'
    do
      AC_MSG_CHECKING([presence of $module])
      if ${PERL} ${PERLOPTS} -e 'use '$module 2>/dev/null; then
@@ -90,7 +93,7 @@ if test -z "$devclassdir"; then
 
    
 AC_CONFIG_FILES([Makefile bin/Makefile])
-AC_CONFIG_FILES([lib/Makefile])
+AC_CONFIG_FILES([lib/Makefile share/Makefile])
                                     
 AC_CONFIG_FILES([setup_tools/substvars.sh],[chmod +x setup_tools/substvars.sh])
 

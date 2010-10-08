@@ -20,7 +20,7 @@ package Gerty::SiteConfig;
 use strict;
 use warnings;
 use Gerty::ConfigFile;
-
+use Gerty::DeviceList;
 
 sub new
 {
@@ -49,7 +49,7 @@ sub new
         return undef;
     }
     
-    my $devclasses_path = $path . '/devclases';
+    my $devclasses_path = $path . '/devclasses';
     if( -d $devclasses_path )
     {
         $Gerty::log->debug('Adding ' . $devclasses_path .
@@ -57,9 +57,103 @@ sub new
         $Gerty::devclass_paths{$devclasses_path} = 300;
     }
 
+    my $perlpath = $path . '/lib';
+    if( -d $perlpath )
+    {
+        $Gerty::log->debug('Adding ' . $perlpath . ' to @INC');
+        unshift( @INC, $perlpath );
+    }
     
+    # Expand ${variable-expansions}
+    if( defined($self->{'cfg'}{'siteconfig'}) )
+    {
+        while( my($attr, $value) = each %{$self->{'cfg'}{'siteconfig'}} )
+        {
+            my $changed = 0;
+            while( $value =~ /\$\{([^\}]+)\}/o )
+            {
+                my $lookup = $1;
+                my $subst = $self->{'cfg'}{'siteconfig'}{$lookup};
+                if( defined($subst) )
+                {
+                    $value =~ s/\$\{$lookup\}/$subst/g;
+                    $changed = 1;
+                }
+                else
+                {
+                    $Gerty::log->critical
+                        ('Cannot expand variable ${' . $lookup . '} in ' .
+                         '[siteconfig] section in ' . $filename);
+                    return undef;
+                }                    
+            }
+
+            if( $changed )
+            {
+                $self->{'cfg'}{'siteconfig'}{$attr} = $value;
+            }
+        }
+    }
+
+
+    foreach my $listname (keys %{$self->{'cfg'}{'devices'}})
+    {
+        while( my($attr, $value) =
+               each %{$self->{'cfg'}{'devices'}{$listname}} )
+        {
+            my $changed = 0;
+            while( $value =~ /\$\{([^\}]+)\}/o )
+            {
+                my $lookup = $1;
+                my $subst = $self->{'cfg'}{'devices'}{$listname}{$lookup};
+                if( not defined($subst) )
+                {
+                    $subst = $self->{'cfg'}{'siteconfig'}{$lookup};
+                }
+
+                if( defined($subst) )
+                {
+                    $value =~ s/\$\{$lookup\}/$subst/g;
+                    $changed = 1;
+                }
+                else
+                {
+                    $Gerty::log->critical
+                        ('Cannot expand variable ${' . $lookup . '} in ' .
+                         'device list "' . $listname . '" in ' . $filename);
+                    return undef;
+                }                    
+            }
+
+            if( $changed )
+            {
+                $self->{'cfg'}{'devices'}{$listname}{$attr} = $value;
+            }
+        }
+        
+    }
     return $self;
 }
+
+
+
+
+
+sub attr
+{
+    my $self = shift;
+    my $attr = shift;
+
+    if( defined( $self->{'cfg'}{'siteconfig'} ) )
+    {
+        return $self->{'cfg'}{'siteconfig'}{$attr};
+    }
+    else
+    {
+        return undef;
+    }
+}
+
 
 
 sub devlist
@@ -67,8 +161,18 @@ sub devlist
     my $self = shift;
     my $listname = shift;
 
-    return $self->{'cfg'}{'devices'}{$listname};
+    if( not defined($self->{'cfg'}{'devices'}{$listname}) )
+    {
+        $Gerty::log->critical
+            ('Cannot find device list definition: ' . $listname);
+        return undef;
+    }
+
+    
+    return Gerty::DeviceList->new($listname,
+                                  $self->{'cfg'}{'devices'}{$listname});
 }
+
 
 
 1;

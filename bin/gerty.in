@@ -32,6 +32,21 @@ use Log::Handler;
 # each command line execution module should register itself here
 %Gerty::cmd_registry = ();
 
+# paths to search for devclass INI files.
+# lower sequences are searched first
+# reserved sequence numbers:
+#   100: main Gerty distribution
+#   200: plugin distributions may add paths
+#   300: siteconfig
+%Gerty::devclass_paths = ();
+$Gerty::devclass_paths{'@devclassdir@'} = 100;
+
+# External programs, such as SSH and Telnet
+%Gerty::external_executables = ();
+$Gerty::external_executables{'ssh'} = '@SSH@';
+$Gerty::external_executables{'telnet'} = '@TELNET@';
+
+
 
 # Read plugin configurations
 {
@@ -46,7 +61,7 @@ use Log::Handler;
 }
 
 
-# Initialize CLI modules
+# Initialize shell command modules
 {
     foreach my $module ( sort @Gerty::cli_loadmodules )
     {        
@@ -124,8 +139,6 @@ if( not $ok or $help_needed or
 
 # Set up logging
 $Gerty::log = new Log::Handler;
-    (
-     );
 
 
 

@@ -19,8 +19,11 @@ package Gerty::Job;
 
 use strict;
 use warnings;
+use Net::hostent;
+use Socket;
 use Gerty::ConfigFile;
 use Gerty::SiteConfig;
+use Gerty::DeviceClass;
 
 
 sub new
@@ -83,20 +86,304 @@ sub new
     return undef unless $self->{'siteconfig'};
 
     # initialize devlists
-    foreach my $devlist ( split(/\s*,\s*/o, $self->{'cfg'}{'devlists'}) )
+    foreach my $listname ( split(/\s*,\s*/o, $self->{'cfg'}{'devlists'}) )
     {
-        my $list = $self->{'siteconfig'}->devlist($devlist);
+        my $list = $self->{'siteconfig'}->devlist($listname);
         if( not $list )
         {
-            $Gerty::log->critical('Cannot find device list named "' .
-                                  $devlist . '" in siteconfig');
+            $Gerty::log->critical('Failed to initialize device list named "' .
+                                  $listname . '" in siteconfig');
             return undef;
         }
 
-        $self->{'devlists'}{$devlist} = $list;        
+        $self->{'devlists'}{$listname} = $list;        
     }
     
     return $self;
+}
+
+
+
+sub load_and_execute
+{
+    my $self = shift;
+    my $dev = shift;
+    my $handler_attr = shift;
+    my $method = shift;
+    my @args = @_;
+
+    my $module = $self->device_attr($dev, $handler_attr);
+    if( not defined($module) )
+    {
+        $Gerty::log->critical
+            ('Missing mandatory attribute "' . $handler_attr .
+             '" for device "' . $dev->{'SYSNAME'} . '"');
+        return undef;
+    }
+    
+    eval(sprintf('require %s', $module));
+    if( $@ )
+    {
+        $Gerty::log->critical
+            ('Error loading Perl module ' . $module .
+             ' specified in "' . $handler_attr . '" for device "' .
+             $dev->{'SYSNAME'} . '": ' . $@);
+        return undef;            
+    }
+    
+    my $ret = eval(sprintf('%s->%s(@args)', $module, $method));
+    if( $@ )
+    {
+        $Gerty::log->critical
+            ('Error executing ' . $module . '->' . $method . ': ' . $@);
+        return undef;
+    }
+    
+    return $ret;
+}
+
+
+
+sub attr
+{
+    my $self = shift;
+    my $attr = shift;
+    
+    return $self->{'cfg'}{$attr};
+}
+
+
+# retrieve device parameters according to the hierarchy
+sub retrieve_device_attr
+{
+    my $self = shift;
+    my $dev = shift;
+    my $attr = shift;
+
+    # First look up at the job level
+    my $ret = $self->attr($attr);
+    return $ret if defined($ret);
+
+    # Look up in [siteconfig]
+    $ret = $self->{'siteconfig'}->attr($attr);
+    return $ret if defined($ret);
+
+    # Look up in device list
+    my $listname = $dev->{'DEVLIST'};
+    $ret = $self->{'devlists'}{$listname}->attr($attr);
+    return $ret if defined($ret);
+
+    # Look up in the class hierarchy
+    return $self->{'devclasses'}{$dev->{'DEVCLASS'}}->attr($attr);
+}
+
+
+# retrieve the attribute and do variable substitution
+sub device_attr
+{
+    my $self = shift;
+    my $dev = shift;
+    my $attr = shift;
+
+    my $value = $self->retrieve_device_attr( $dev, $attr );
+    return undef unless defined($value);
+
+    while( $value =~ /\$\{([^\}]+)\}/o )
+    {
+        my $lookup = $1;
+
+        # stupidity check: infinite loop prevention
+        if( $lookup eq $attr )
+        {
+            $Gerty::log->error
+                ('Infinite loop in variable expansion ${' . $lookup .
+                 '} for device: ' . $dev->{'SYSNAME'});
+            return undef;
+        }
+        
+        my $subst = $self->device_attr($dev, $lookup);
+        if( not defined($subst) )
+        {
+            $Gerty::log->error
+                ('Cannot expand variable ${' . $lookup .
+                 '} for device: ' . $dev->{'SYSNAME'});
+            return undef;
+        }
+        
+        $value =~ s/\$\{$lookup\}/$subst/g;
+    }
+
+    return $value;
+}
+    
+
+
+sub device_credentials_attr
+{
+    my $self = shift;
+    my $dev = shift;
+    my $attr = shift;
+    
+    my $source = $self->device_attr($dev, 'credentials-source');
+    if( not defined( $source ) )
+    {
+        $Gerty::log->error
+            ('Mandatory attribute "credentials-source" is not defined for ' .
+             'device ' . $dev->{'SYSNAME'});
+        return undef;
+    }
+    
+    if( $source eq 'inline' )
+    {
+        return( $self->device_attr($dev, $attr) );
+    }
+    else
+    {
+        return( $self->load_and_execute($dev, 'credentials-source',
+                                        'device_credentials_attr',
+                                        $dev, $attr));
+    }
+}
+    
+
+# fetch and validate the devices
+sub retrieve_devices
+{
+    my $self = shift;
+
+    my $ret = [];
+    my %seen;
+    
+    foreach my $devlist ( values %{$self->{'devlists'}} )
+    {
+        my $devices = $devlist->retrieve_devices();
+        foreach my $dev ( @{$devices} )
+        {
+            if( not defined($dev->{'SYSNAME'}) )
+            {
+                $Gerty::log->error
+                    ('Mandatory attribute SYSNAME is not defined for a ' .
+                     'device from ' . $dev->{'SOURCE'});
+                next;
+            }
+
+            my $sysname = $dev->{'SYSNAME'};
+
+            if( $seen{$sysname} )
+            {
+                $Gerty::log->error
+                    ('Duplicate SYSNAME for a device from ' .
+                     $dev->{'SOURCE'});
+                next;
+            }
+            else
+            {
+                $seen{$sysname} = 1;
+            }
+
+            # load device class
+            if( not defined($self->{'devclasses'}{$dev->{'DEVCLASS'}}) )
+            {
+                my $class =
+                    new Gerty::DeviceClass({class => $dev->{'DEVCLASS'}});
+                return undef unless $class;                
+                $self->{'devclasses'}{$dev->{'DEVCLASS'}} = $class;
+            }
+            
+            if( not defined($dev->{'ADDRESS'}) )
+            {
+                # Sysname could actually be the IP address
+                if( $sysname =~ /^[0-9]+\./o or
+                    $sysname =~ /^[0-9a-f]+\:/oi )
+                {
+                    $Gerty::log->debug
+                        ('SYSNAME' . $sysname . ' looks like IP address');
+                    $dev->{'ADDRESS'} = $sysname;
+                }
+                else
+                {
+                    $Gerty::log->debug
+                        ('ADDRESS is not defined for "' . $sysname .
+                         '". Trying to resolve the name in DNS');
+                    
+                    my $hostname = $sysname;
+                    if( index($hostname, '.') < 0 )
+                    {
+                        my $domain_name =
+                            $self->device_attr($dev, 'domain-name');
+                        if( defined($domain_name) )
+                        {
+                            $hostname .= '.' . $domain_name;
+                        }
+                    }
+                    my $h = gethost($hostname);
+                    if( not defined( $h ) )
+                    {
+                        $Gerty::log->error
+                            ('Cannot resolve DNS name: ' . $hostname);
+                        next;
+                    }
+
+                    my @addresses = @{$h->addr_list()};
+                    if( scalar(@addresses) > 1 )
+                    {
+                        $Gerty::log->warning
+                            ('DNS name ' . $hostname . ' resolves into more ' .
+                             'than one IP address');
+                    }
+
+                    my $ipaddr = inet_ntoa($addresses[0]);
+                    $Gerty::log->debug
+                        ('Resolved ' . $sysname . ' into ' . $ipaddr);
+
+                    $dev->{'ADDRESS'} = $ipaddr;
+                }
+            }
+
+            push(@{$ret}, $dev);
+        }        
+    }
+
+    return $ret;
+}
+
+
+
+sub init_access
+{
+    my $self = shift;
+    my $dev = shift;
+
+    my $acc = $self->load_and_execute
+        ($dev, 'access-handler', 'new',
+         {'job' => $self, 'device' => $dev});
+    
+    if( not defined($acc) )
+    {
+        return 0;
+    }
+    
+    $dev->{'ACCESS_HANDLER'} = $acc;
+    return 1;
+}
+
+
+
+sub execute
+{
+    my $self = shift;
+    my $devices = shift;
+
+    foreach my $dev (@{$devices})
+    {
+        my $acc = $dev->{'ACCESS_HANDLER'};
+        if( $acc->connect() )
+        {
+            $self->load_and_execute
+                ($dev, 'command-handler', 'run',
+                 {'job' => $self, 'device' => $dev});
+        }
+    }
 }
 
 

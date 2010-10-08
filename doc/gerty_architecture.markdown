@@ -43,12 +43,23 @@ The job definition file consists of a number of sections, and these sections
 are processed hierarchically: the job consists of device lists, and each
 device list defines some attributes which are used by each individual device.
 
-The attribute values are hierarchically inherited from the top to the bottom.
-For example, when the access driver looks for the **auth-password** attribute,
-it would be searched first in device class definition, then in its parent
-classes, then at the device list level, then at the siteconfig level,
-and finally at the job level, 
+Some attributes belong to their specific area. For example, the *devlists* 
+attribute is only used in the *[job]* section in the job definition file.
 
+Device attributes, those which define the Gerty's behavior at the device 
+level, are looked up in a hierarchical fashion: 
+
+1. Device classes define the default values.
+2. Child device classes may override parents' attributes.
+3. If a child inherits from several parents, subsequent parents may 
+   override previous parents's attributes.
+4. The device list (*[devices XXX]* in *siteconfig.ini*) may override 
+   attributes defined in device classes.
+5. The *[siteconfig]* section in *siteconfig.ini* may override attributes 
+   defined in device lists.
+6. The *[job]* section in Job definition file may override attributes defined 
+   at the siteconfig level.
+   
 
 
 Example of a job file (**/opt/gerty/Company/jobs/backbone.job.ini**):
@@ -64,24 +75,26 @@ Example of a job file (**/opt/gerty/Company/jobs/backbone.job.ini**):
       ; here Gerty looks for Company specific modules, such as device class
       ; definitions or custom processing hooks
       siteconfig = /opt/gerty/Company
-
+      
+      ; refer to the device lists defined in siteconfigs
+      devlists = cisco-7600-pe, juniper-mx-pe
+      
+Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
+    
+    [siteconfig]
       ; we use SSH globally everywhere
       cli-access-method = ssh
 
       ; example of a user-defined variable
       backbone-data = /srv/gerty/backbone
       
-      ; refer to the device lists defined in siteconfigs
-      devlists = cisco-7600-pe, juniper-mx-pe
-      
-Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
 
     [devices cisco-7600-pe]
       description = "Cisco 7600 series as MPLS PE routers"
 
       ; take the list of devices from a file.
       ; alternatively this can be SQL or SOAP or whatever query
-      source-type = Gerty::Devlist::File
+      source-type = Gerty::DeviceList::File
 
       ; attributes specific to this source type
       source-filename = ${backbone-data}/nodelists/cisco7600pe
@@ -94,11 +107,12 @@ Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
       ; Gerty output, its network address (could be a FQDN or IPv4/6 address),
       ; and free-form device description. These elements are expected to
       ; be separated with double slashes
-      source-lineformat = SYSNAME//ADDRESS//DESCRIPTION
+      source-delimiter = \/\/
+      source-fields = SYSNAME, ADDRESS, DESCRIPTION
 
       ; device class defines all Gerty's behavior for these devices.
       ; source can also define alternative device types
-      ; (DEVTYPE in source-lineformat)
+      ; (DEVCLASS in source-fields)
       devclass = Company.Cisco7600PE
 
 
@@ -106,7 +120,7 @@ Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
       description = "Juniper MX series as MPLS PE routers"
 
       ; example of SQL import
-      source-type = Gerty::Devlist::DBI
+      source-type = Gerty::DeviceList::DBI
 
       ; Database connection attributes
       source-dsn = DBI:mysql:database=inventory;host=dbhost
@@ -118,7 +132,7 @@ Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
       source-query = SELECT NODE, ADDR, DESCRIPTION FROM V_DEVLIST
 
       ; tell Gerty positions in the result row
-      source-rowformat = SYSNAME, ADDRESS, DESCRIPTION
+      source-fields = SYSNAME, ADDRESS, DESCRIPTION
 
       devclass = Company.JuniperMXPE
 
@@ -143,12 +157,12 @@ Example of a devclass file
       credentials-source = inline
 
       ; login credentials
-      auth-username = gerty
-      auth-password = eeDie6louj
+      cli-auth-username = gerty
+      cli-auth-password = eeDie6louj
 
       ; enable password is used by "Gerty.Cisco" and only when 
       ; admin-mode is true
-      auth-epassword = Ieyei5ofej
+      cli-auth-epassword = Ieyei5ofej
 
       ;;; enable the actions (they are defined in modules like "Gerty.Cisco")
 
@@ -185,7 +199,7 @@ The users and site administrators would never have a need to modify
 anything in them, and the files would be overwritten by the package installer.
 
 
-*   `lib/perl/Gerty/` -- the directory with Perl modules that are installed
+*   `lib/perl/Gerty` -- the directory with Perl modules that are installed
     by Gerty installer and plugins
 *   `bin/gerty` -- the only user executable. It dispatches the calls to
     various functionality modules. Plugins can also add new subcommands and

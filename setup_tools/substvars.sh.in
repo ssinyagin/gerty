@@ -28,6 +28,8 @@ pkgdatadir=@pkgdatadir@
 
 @SED@ \
     -e "s,\@PERL\@,@PERL@,g" \
+    -e "s,\@TELNET\@,@TELNET@,g" \
+    -e "s,\@SSH\@,@SSH@,g" \
     -e "s,\@VERSION\@,@VERSION@,g" \
     -e "s,\@bindir\@,@bindir@,g" \
     -e "s,\@logdir\@,@logdir@,g" \

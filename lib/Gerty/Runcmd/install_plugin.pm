@@ -17,6 +17,10 @@
 
 package Gerty::Runcmd::install_plugin;
 
+use strict;
+use warnings;
+
+
 $Gerty::cmd_registry{'install_plugin'} = {
     'opts' => {},
     'arguments' => 1,
@@ -39,3 +43,10 @@ sub execute
 
 
 1;
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:
