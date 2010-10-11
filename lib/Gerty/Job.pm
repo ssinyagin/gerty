@@ -21,6 +21,8 @@ use strict;
 use warnings;
 use Net::hostent;
 use Socket;
+use IO::File;
+
 use Gerty::ConfigFile;
 use Gerty::SiteConfig;
 use Gerty::DeviceClass;
@@ -160,21 +162,49 @@ sub retrieve_device_attr
     my $dev = shift;
     my $attr = shift;
 
+    $Gerty::log->debug('Retrieving attribute "' . $attr .
+                       '" for device "' . $dev->{'SYSNAME'});
+
     # First look up at the job level
     my $ret = $self->attr($attr);
-    return $ret if defined($ret);
+    if( defined($ret) )
+    {
+        $Gerty::log->debug('Retrieved "' . $attr .
+                           '"="' . $ret . '" from job level');
+        return $ret;
+    }
 
     # Look up in [siteconfig]
     $ret = $self->{'siteconfig'}->attr($attr);
-    return $ret if defined($ret);
+    if( defined($ret) )
+    {
+        $Gerty::log->debug('Retrieved "' . $attr .
+                           '"="' . $ret . '" from siteconfig level');
+        return $ret;
+    }
 
     # Look up in device list
     my $listname = $dev->{'DEVLIST'};
     $ret = $self->{'devlists'}{$listname}->attr($attr);
-    return $ret if defined($ret);
-
+    if( defined($ret) )
+    {
+        $Gerty::log->debug('Retrieved "' . $attr .
+                           '"="' . $ret . '" from devicelist level');
+        return $ret;
+    }
+    
     # Look up in the class hierarchy
-    return $self->{'devclasses'}{$dev->{'DEVCLASS'}}->attr($attr);
+    $ret = $self->{'devclasses'}{$dev->{'DEVCLASS'}}->attr($attr);
+    if( defined($ret) )
+    {
+        $Gerty::log->debug('Retrieved "' . $attr .
+                           '"="' . $ret . '" from devclass level');
+    }
+    else
+    {
+        $Gerty::log->debug('"' . $attr . '" is undefined');
+    }
+    return $ret;
 }
 
 
@@ -377,12 +407,76 @@ sub execute
     foreach my $dev (@{$devices})
     {
         my $acc = $dev->{'ACCESS_HANDLER'};
-        if( $acc->connect() )
+        next unless $acc->connect();
+        
+        my $handler = $self->load_and_execute
+            ($dev, 'command-handler', 'new',
+             {'job' => $self, 'device' => $dev});
+
+        if( not $handler )
         {
-            $self->load_and_execute
-                ($dev, 'command-handler', 'run',
-                 {'job' => $self, 'device' => $dev});
+            $Gerty::log->error
+                ('Failed to initialize the command handler for device "' .
+                 $dev->{'SYSNAME'});
+            $acc->close();
+            next;
         }
+
+        my $actions = $handler->supported_actions();
+        $Gerty::log->debug('Actions supported for ' . $dev->{'SYSNAME'} .
+                           ': ' . join(', ', @{$actions}));
+        
+        foreach my $action (@{$actions})
+        {
+            if( $self->device_attr($dev, 'do-' . $action) )
+            {
+                my $path = $self->device_attr($dev, $action . '-path');
+                if( not defined($path) )
+                {
+                    $Gerty::log->debug
+                        ($action . '-path is not defined for ' .
+                         $dev->{'SYSNAME'} . ', trying default-output-path');
+                    $path = $self->device_attr($dev, 'default-output-path');
+                    if( not defined($path) )
+                    {
+                        $Gerty::log->error
+                            ('Neither ' . $action .
+                             '-path nor default-output-path is defined for ' .
+                             $dev->{'SYSNAME'} . '. Skipping the action: ' .
+                             $action);
+                        next;
+                    }
+                }
+
+                if( not -d $path )
+                {
+                    $Gerty::log->critical
+                        ('No such directory: "' . $path .
+                         '". Skipping action ' .  $action .
+                         ' for device ' . $dev->{'SYSNAME'});
+                    next;
+                }
+                
+                my $fname = $path . '/' .
+                    $dev->{'SYSNAME'} . '.' . $action;
+                
+                my $fh = new IO::File($fname, 'w');
+                if( not $fh )
+                {
+                    $Gerty::log->critical('Cannot open file ' .
+                                          $fname . ' for writing: ' . $!);
+                    return next;
+                }
+                
+                my $out = $handler->do_action($action);
+                if( defined($out) )
+                {
+                    $fh->print($out);
+                }
+                
+                $fh->close();
+            }
+        }                
     }
 }
 

@@ -98,20 +98,47 @@ sub new
 }
 
 
+sub classname
+{
+    my $self = shift;
+    return $self->{'options'}{'class'};
+}
+
+
 sub attr
 {
     my $self = shift;
     my $attr = shift;
 
     my $ret = $self->{'cfg'}{$attr};
-    return $ret if defined($ret);
-
+    if( defined($ret) )
+    {
+        $Gerty::log->debug('Found "' . $attr . '" in devclass "' .
+                           $self->classname() . '"');
+        return $ret;
+    }
+    else
+    {
+        $Gerty::log->debug('Did not find "' . $attr . '" in devclass "' .
+                           $self->classname() .
+                           '". Looking up at parent classes');
+    }
+    
     foreach my $parent (reverse @{$self->{'parents'}})
     {
         $ret = $parent->attr( $attr );
-        return $ret if defined($ret);
+        if( defined($ret) )
+        {
+            return $ret;
+        }
+        else
+        {
+            $Gerty::log->debug('Did not find "' . $attr . '" in devclass "' .
+                               $parent->classname() .
+                               '". Looking up further at parent classes');
+        }
     }
-        
+    
     return undef;    
 }
 

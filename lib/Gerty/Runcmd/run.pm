@@ -68,6 +68,7 @@ sub execute
     if( $expect_debug )
     {
         $Expect::Debug = $expect_debug;
+        $Gerty::expect_debug = $expect_debug;
     }
     
     my $job = new Gerty::Job({'file' => $jobfile,

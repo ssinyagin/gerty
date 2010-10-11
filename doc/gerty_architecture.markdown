@@ -87,7 +87,9 @@ Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
 
       ; example of a user-defined variable
       backbone-data = /srv/gerty/backbone
-      
+
+      ; if not specified explicitly, the output files are saved here
+      default-output-path = ${backbone-data}/out
 
     [devices cisco-7600-pe]
       description = "Cisco 7600 series as MPLS PE routers"

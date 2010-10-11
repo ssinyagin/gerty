@@ -32,15 +32,6 @@ my %known_access_methods =
     ('ssh' => 1,
      'telnet' => 1);
 
-my %attr_defaults =
-    ('cli-ssh-port' => 22,
-     'cli-telnet-port' => 23,
-     'cli-log-dir' => '',
-     'cli-logfile-timeformat' => '%Y%m%H-%H%M%S',
-     'cli-timeout' => 15,
-     'cli-initial-prompt' => '^.+[\#\>\$]'
-     );
-    
 
      
 sub new
@@ -50,8 +41,6 @@ sub new
     $self->{'options'} = shift;
     bless $self, $class;
 
-    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
-    
     foreach my $opt ('job', 'device')
     {
         if( not defined( $self->{'options'}->{$opt} ) )
@@ -60,6 +49,8 @@ sub new
             return undef;
         }
     }
+
+    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
 
     # Fetch mandatory attributes
 
@@ -108,17 +99,23 @@ sub new
         }       
     }
 
-    # Fetch optional attributes
-    
-    while( my($attr, $default) = each %attr_defaults )
+    # Fetch other attributes
+
+    foreach my $attr
+        ('cli-ssh-port', 'cli-telnet-port', 'cli-log-dir', 
+         'cli-logfile-timeformat', 'cli-timeout', 'cli-initial-prompt')
     {
         my $val = $self->device_attr($attr);
         if( not defined($val) )
         {
-            $val = $default;
+            $Gerty::log->error
+                ('Missing mandatory attribute "' .
+                 $attr . '" for device: ' . $sysname);
+            return undef;
         }
         $self->{'attr'}{$attr} = $val;        
     }
+    
     return $self;
 }
 
@@ -161,7 +158,11 @@ sub connect
     my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
     my $method = $self->{'attr'}{'cli-access-method'};
     my $exp = new Expect();
-
+    if( not $Gerty::expect_debug )
+    {
+        $exp->log_stdout(0);
+    }
+    
     my $logdir = $self->{'attr'}{'cli-log-dir'};
     if( length($logdir) > 0 )
     {
@@ -216,14 +217,24 @@ sub connect
         if( not defined
             $exp->expect
             ( $timeout,
-              ['-re', qr/password:/, sub {$exp->send($password . "\r")}],
+              ['-re', qr/password:/i, sub {
+                  $exp->send($password . "\r"); exp_continue;}],
               ['-re', $prompt],
-              ['timeout', sub {$failure = 'Connection timeout'}] ) or
-            defined($failure))
+              ['timeout', sub {$failure = 'Connection timeout'}],
+              ['-re', qr/closed/i, sub {$failure = 'Connection closed'}],
+              ['eof', sub {$failure = 'Connection closed'}]) )
         {
             $Gerty::log->error
-                ('Failed logging into ' . $sysname . ': ' . 
-                 ($exp->error() ? $exp->error() : $failure));
+                ('Could not match the output for ' . $sysname . ': ' . 
+                 $exp->before());            
+            $exp->hard_close();
+            return undef;
+        }
+        
+        if( defined($failure))
+        {
+            $Gerty::log->error
+                ('Failed logging into ' . $sysname . ': ' . $failure);
             $exp->hard_close();
             return undef;
         }
@@ -259,23 +270,25 @@ sub connect
               ['-re', qr/incorrect/i, sub {$failure = 'Access denied'}],
               ['-re', qr/denied/i, sub {$failure = 'Access denied'}],
               ['-re', qr/fail/i, sub {$failure = 'Access denied'}],
+              ['-re', qr/refused/i, sub {$failure = 'Connection refused'}],
               ['timeout', sub {$failure = 'Connection timeout'}],
+              ['eof', sub {$failure = 'Connection closed'}],
               ['-re', $prompt] ) )
         {
             $Gerty::log->error
-                ('Failed connecting to ' . $sysname . ': ' . 
-                 $exp->error() . ' ' . $exp->before());            
+                ('Could not match the output for ' . $sysname . ': ' . 
+                 $exp->before());            
             $exp->hard_close();
             return undef;
         }
-
-        if( $failure )
+            
+        if( defined($failure) )
         {
             $Gerty::log->error
-                ('Login failure for ' . $sysname . ': ' .  $failure);
+                ('Failed connecting to ' . $sysname . ': ' . $failure);
             $exp->hard_close();
             return undef;
-        }                
+        }
     }
 
     $Gerty::log->debug('Logged in at ' . $ipaddr);
