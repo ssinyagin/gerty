@@ -19,14 +19,14 @@ Installing from sources:
 
 Pre-requisites: autoconf, automake
 
-  git pull https://ssinyagin@github.com/ssinyagin/gerty.git
+  git clone https://github.com/ssinyagin/gerty.git
   cd gerty
   autoreconf
   ./configure --prefix=/opt/gerty
   make
   make install
 
-
+later on, "git pull" would refresh your copy with the latest updates
 
 
 Author:
