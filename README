@@ -17,7 +17,7 @@ http://github.com/ssinyagin/gerty/blob/master/doc/gerty_device_attributes.markdo
 
 Installing from sources:
 
-Pre-requisites: autoconf, automake
+Pre-requisites: autoconf, automake, and a number of Perl modules
 
   git clone https://github.com/ssinyagin/gerty.git
   cd gerty
