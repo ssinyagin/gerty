@@ -59,7 +59,9 @@ level, are looked up in a hierarchical fashion:
    defined in device lists.
 6. The *[job]* section in Job definition file may override attributes defined 
    at the siteconfig level.
-   
+7. If the value is not found during previous steps, hey are repeated by adding 
+   `-default` suffix to the attribute name. This allows to set more specfic 
+   values to device lists or classes.
 
 
 Example of a job file (**/opt/gerty/Company/jobs/backbone.job.ini**):
@@ -174,7 +176,7 @@ Example of a devclass file
       do-config-backup = 1
       config-backup-path = ${backbone-data}/cfgbackup
 
-      config-backup-postprocess = Gerty::Postprocess::Subversion, Company::Postprocess
+      config-backup-postprocess = Company::Postprocess
 
       ; "sh ver", "sh module", etc. It is an interactive script,
       ; doing additional disagostics depending on HW type
@@ -232,6 +234,15 @@ Siteconfig is a directory with some predefined elements, as follows:
 *   `lib/Company/` -- optional path where Gerty looks for Perl modules
 *   `jobs/` -- preferred place for job definitions, although they can be 
     stored anywhere.
+
+
+Author
+------
+
+Stanislav Sinyagin  
+CCIE #5478  
+ssinyagin@k-open.com  
++41 79 407 0224  
 
 
 
