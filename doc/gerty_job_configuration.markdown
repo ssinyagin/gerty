@@ -21,7 +21,7 @@ File location and naming
 
 The job definition file name is given as an argument to the `gerty run` 
 command, so its location is completely arbitrary. The file should have *.ini*
-extention.
+extension.
 
 Usually the job definition files are located in *jobs/* subdirectory of the 
 siteconfig folder.

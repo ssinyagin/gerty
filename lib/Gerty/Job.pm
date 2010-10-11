@@ -215,7 +215,11 @@ sub device_attr
     my $dev = shift;
     my $attr = shift;
 
-    my $value = $self->retrieve_device_attr( $dev, $attr );
+    my $value = $self->retrieve_device_attr($dev, $attr);
+    if( not defined($value) )
+    {
+        $value = $self->retrieve_device_attr($dev, $attr . '-default');
+    }
     return undef unless defined($value);
 
     while( $value =~ /\$\{([^\}]+)\}/o )
@@ -475,6 +479,23 @@ sub execute
                 }
                 
                 $fh->close();
+
+                # If postprocess handler is defined, hand over the control
+                # immediately (must not take too much time, as we still have
+                # CLI session open)
+
+                my $pp_attr = $action . '-postprocess';
+                if( defined( $self->device_attr($dev, $pp_attr) ) )
+                {
+                    my $pp_handler = $self->load_and_execute
+                        ($dev, $pp_attr, 'new',
+                         {'job' => $self, 'device' => $dev});
+                    
+                    if( $pp_handler )
+                    {
+                        $pp_attr->process($fname);
+                    }                    
+                }
             }
         }                
     }

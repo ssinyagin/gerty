@@ -1,11 +1,22 @@
-GERTY: a better way of doing things that RANCID does
+GERTY: a proper way of doing things that RANCID does... and much more
 
-See the Wiki for more details about the concept:
+See the Wiki for a short concept overview:
 http://github.com/ssinyagin/gerty/wiki
 
-See the architecture and design documentation at:
+
+Architecture and design:
 http://github.com/ssinyagin/gerty/blob/master/doc/gerty_architecture.markdown
 
+
+Software documentation:
+http://github.com/ssinyagin/gerty/blob/master/doc/gerty_devclass_configuration.markdown
+http://github.com/ssinyagin/gerty/blob/master/doc/gerty_device_attributes.markdown
+http://github.com/ssinyagin/gerty/blob/master/doc/gerty_job_configuration.markdown
+http://github.com/ssinyagin/gerty/blob/master/doc/gerty_siteconfig_configuration.markdown
+
+
+
+Author:
 
 Stanislav Sinyagin
 CCIE #5478
