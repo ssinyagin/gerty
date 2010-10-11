@@ -15,6 +15,19 @@ http://github.com/ssinyagin/gerty/blob/master/doc/gerty_devclass_configuration.m
 http://github.com/ssinyagin/gerty/blob/master/doc/gerty_device_attributes.markdown
 
 
+Installing from sources:
+
+Pre-requisites: autoconf, automake
+
+  git pull https://ssinyagin@github.com/ssinyagin/gerty.git
+  cd gerty
+  autoreconf
+  ./configure --prefix=/opt/gerty
+  make
+  make install
+
+
+
 
 Author:
 
