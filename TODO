@@ -4,3 +4,5 @@
 * centralized INI reader
 * make all packages subclasseable
 * blank out passwords
+* write a user guide
+* automate jumphost access
