@@ -6,3 +6,17 @@
 * blank out passwords
 * write a user guide
 * automate jumphost access
+
+
+From:	
+Viktor Steinmann <stony@stony.com>
+To:	swinog@lists.swinog.ch	
+
+Great idea. One feature I've been missing in rancid for a long time is
+the possibility to have a "one-stop-shop" for emergency recovery. While
+the configuration is saved to CVS, the IOS and other important files
+such as "vlan.dat" are missing. It would be great, if this new tool
+would include a backup-function for the file-system on the
+router/switch, so that it can be fully restored after an emergency
+(including all important files).
+
