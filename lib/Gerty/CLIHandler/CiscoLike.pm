@@ -32,11 +32,9 @@ my %supported_actions =
      
 sub new
 {
-    my $proto = shift;
-    my $options = shift;
-    my $class = ref($proto) || $proto;
-    
-    my $self = $class->SUPER::new( $options );
+    my $class = shift;
+    my $options = shift;    
+    my $self = $class->SUPER::new( $options );    
     return undef unless defined($self);
 
     my $sysname = $self->{'device'}->{'SYSNAME'};

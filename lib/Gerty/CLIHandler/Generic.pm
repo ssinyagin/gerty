@@ -26,10 +26,8 @@ use Expect qw(exp_continue);
      
 sub new
 {
-    my $proto = shift;
+    my $class = shift;
     my $options = shift;
-    my $class = ref($proto) || $proto;
-        
     my $self = {};
     bless $self, $class;
     
