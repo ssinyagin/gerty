@@ -50,11 +50,11 @@ Default values are specified in *Gerty.Default.ini*.
   credentials to access devices. Valid values are: `inline` or a Perl module 
   name. Default is *inline*.
 
-* __command-handler__: refers to a Perl class that processes the CLI
+* __job.action-handler__: refers to a Perl class that processes the CLI
   input/output. Example: *Gerty::CLIHandler::CiscoLike*.
 
-* __output.default-path__: directory path where the output of command actions 
-  would be stored if not overwritten by *XXX-path* attribute.
+* __job.output-handler__: defines the Perl class that is used for action 
+  output processing. Default: *Gerty::Output::File*.
 
 
 
@@ -73,6 +73,32 @@ Optional attributes
 
 * __admin-mode__: if set to true value, the command handler tries to enter 
   into administrative mode (*enable* in Cisco terms). 
+
+
+
+Gerty::Output::File output handler
+----------------------------------
+
+Default values are specified in *Gerty.Default.ini*.
+
+Mandatory attributes:
+
+* __output.default-path__: directory path where the output of command actions 
+  would be stored if not overwritten by *XXX.path* attribute.
+
+* __output.failure-suffix__ [failure]: suffix to be used for failure status 
+  file names.
+  
+* __output.success-suffix__ [success]: suffix to be used for success status 
+  file names.
+
+Optional attributes:
+
+* __output.default-status-path__: a directory where the action status 
+  files would be created. Defaults to the same path as __output.default-path__.
+
+* __output.delete-on-failure__ [0]: if set to true, the previous output
+  file is deleted before the action starts.
 
 
    
@@ -148,11 +174,12 @@ Optional parameters:
   Each action (XXX) must be accompanied by a corresponding __XXX.command__ or
   __XXX.command-N__
 
-* __XXX.multicommand: if set to a nonzero integer, defines the number of 
+* __XXX.multicommand__: if set to a nonzero integer, defines the number of 
   subsequent commands that comprise the action. Each command must be defined 
   in __XXX.command-N__ attribute.
   
-
+* __cli.error-regexp__: regular expression that identifies an error message in
+   the command output. *Gerty.CiscoLike.ini* defines it as `^\%`
   
 
 Gerty::CLIHandler::CiscoLike command handler
@@ -167,19 +194,20 @@ Default values are specified in *Gerty.CiscoLike.ini*.
 
 Mandatory attributes:
 
-* __user-prompt__: regular expression for user prompt. Default: `^\S+\>`.
+* __cli.user-prompt__: regular expression for user prompt. Default: `^\S+\>`.
 
-* __admin-prompt__: regular expression for enable prompt. Default: `^\S+\#`.
+* __cli.admin-prompt__: regular expression for enable prompt. 
+  Default: `^\S+\#`.
 
-* __admin-mode-command__: command that enters administrative mode. 
+* __cli.admin-mode.command__: command that enters administrative mode. 
   Default: `enable`.
 
-* __init-terminal__: comma-separated list of attributes defining the 
+* __cli.init-terminal__: comma-separated list of attributes defining the 
   terminal initialization commands. Default: `pager-off`, and the 
-  corresponding command is defined in the attribute *pager-off-command*, set 
+  corresponding command is defined in the attribute *pager-off.command*, set 
   to `terminal length 0`.
 
-* __show-config-command__: command that prints the current device 
+* __config-backup.command__: command that prints the current device 
   configuration. Default: `show running-config`.
 
 
@@ -188,9 +216,9 @@ Optional attributes:
 * __cli.auth-epassword__: enable password. Not required if the user is 
   automatically privileged.
 
-* __config-exclude__: comma-separated list of attributes. Default: 
+* __config-backup.exclude__: comma-separated list of attributes. Default: 
   `ntp-clock-period`, and the corresponding attribute 
-  *ntp-clock-period-regexp* defines a regular expression. These parameters 
+  *ntp-clock-period.regexp* defines a regular expression. These parameters 
   define the lines which should be removed from the configuration before 
   saving the result.
 

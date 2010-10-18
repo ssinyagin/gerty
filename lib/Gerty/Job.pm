@@ -21,7 +21,6 @@ use strict;
 use warnings;
 use Net::hostent;
 use Socket;
-use IO::File;
 
 use Gerty::ConfigFile;
 use Gerty::SiteConfig;
@@ -48,9 +47,9 @@ sub new
              ' in job definition file ' . $filename);
         return undef;
     }
-            
+    
     $self->{'cfg'} = $cfg->{'job'};    
-        
+    
     # override attributes from CLI arguments
     if( defined($self->{'options'}{'attrs'}) )
     {
@@ -249,7 +248,7 @@ sub device_attr
 
     return $value;
 }
-    
+
 
 
 sub device_credentials_attr
@@ -278,7 +277,7 @@ sub device_credentials_attr
                                         $dev, $attr));
     }
 }
-    
+
 
 # fetch and validate the devices
 sub retrieve_devices
@@ -413,11 +412,11 @@ sub execute
         my $acc = $dev->{'ACCESS_HANDLER'};
         next unless $acc->connect();
         
-        my $handler = $self->load_and_execute
-            ($dev, 'command-handler', 'new',
+        my $action_handler = $self->load_and_execute
+            ($dev, 'job.action-handler', 'new',
              {'job' => $self, 'device' => $dev});
 
-        if( not $handler )
+        if( not $action_handler )
         {
             $Gerty::log->error
                 ('Failed to initialize the command handler for device "' .
@@ -426,7 +425,11 @@ sub execute
             next;
         }
 
-        my $actions = $handler->supported_actions();
+        my $output_handler = $self->load_and_execute
+            ($dev, 'job.output-handler', 'new',
+             {'job' => $self, 'device' => $dev});
+        
+        my $actions = $action_handler->supported_actions();
         $Gerty::log->debug('Actions supported for ' . $dev->{'SYSNAME'} .
                            ': ' . join(', ', @{$actions}));
 
@@ -439,68 +442,57 @@ sub execute
                 next;
             }
 
-            my $path = $self->device_attr($dev, $action . '.path');
-            if( not defined($path) )
+            if( not $output_handler->check_action_attributes($action) )
             {
-                $Gerty::log->debug
-                    ($action . '.path is not defined for ' .
-                     $dev->{'SYSNAME'} . ', trying output.default-path');
-                $path = $self->device_attr($dev, 'output.default-path');
-                if( not defined($path) )
-                {
-                    $Gerty::log->error
-                        ('Neither ' . $action .
-                         '.path nor output.default-path is defined for ' .
-                         $dev->{'SYSNAME'} . '. Skipping the action: ' .
-                         $action);
-                    next;
-                }
-            }
-            
-            if( not -d $path )
-            {
-                $Gerty::log->critical
-                    ('No such directory: "' . $path .
-                     '". Skipping action ' .  $action .
-                     ' for device ' . $dev->{'SYSNAME'});
                 next;
             }
+
+            $output_handler->prepare_for_action($action);
             
-            my $fname = $path . '/' .
-                $dev->{'SYSNAME'} . '.' . $action;
-            
-            my $fh = new IO::File($fname, 'w');
-            if( not $fh )
+            my $result = $action_handler->do_action($action);        
+            if( not defined($result) )
             {
-                $Gerty::log->critical('Cannot open file ' .
-                                      $fname . ' for writing: ' . $!);
-                return next;
+                $Gerty::log->critical
+                    ('Action ' . $action . ' returned an undef');
+                next;
+            }
+
+            if( $result->{'success'} )
+            {
+                $Gerty::log->info
+                    ('Action ' . $action .
+                     ' executed successfully for device: ' .
+                     $dev->{'SYSNAME'});
+            }
+            else
+            {
+                $Gerty::log->info
+                    ('Action ' . $action .
+                     ' failed for device "' . $dev->{'SYSNAME'} .
+                     '" : ' . $result->{'content'});
             }
             
-            my $out = $handler->do_action($action);
-            if( defined($out) )
-            {
-                $fh->print($out);
-            }
+            $output_handler->action_finished($action, $result);
             
-            $fh->close();
-            $Gerty::log->info('Wrote action result to ' . $fname);
-                              
-            # If postprocess handler is defined, hand over the control
-            # immediately (must not take too much time, as we still have
-            # CLI session open)
             
-            my $pp_attr = $action . '.postprocess';
-            if( defined( $self->device_attr($dev, $pp_attr) ) )
+            if( $result->{'success'} )
             {
-                my $pp_handler = $self->load_and_execute
-                    ($dev, $pp_attr, 'new',
-                     {'job' => $self, 'device' => $dev});
-                
-                if( $pp_handler )
+                # If postprocess handler is defined, hand over the control
+                # immediately (must not take too much time, as we still have
+                # CLI session open)
+            
+                my $pp_attr = $action . '.postprocess';
+                if( defined( $self->device_attr($dev, $pp_attr) ) )
                 {
-                    $pp_attr->process($fname);
-                }                    
+                    my $pp_handler = $self->load_and_execute
+                        ($dev, $pp_attr, 'new',
+                         {'job' => $self, 'device' => $dev});
+                    
+                    if( $pp_handler )
+                    {
+                        $pp_attr->process($result, $output_handler);
+                    }                    
+                }
             }
             
             $actions_count++;

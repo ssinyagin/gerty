@@ -54,14 +54,14 @@ sub new
     
     $self->{'expect'} = $acc->expect();
 
-    foreach my $attribute
-        ( 'admin-mode', 'cli.timeout', 'user-prompt', 'admin-prompt',
-          'cli.comment-string', 'cli.command-actions' )
+    foreach my $attr
+        ( 'admin-mode', 'cli.timeout', 'cli.user-prompt', 'cli.admin-prompt',
+          'cli.comment-string', 'cli.command-actions', 'cli.error-regexp' )
     {
-        $self->{$attribute} = $self->device_attr($attribute);
+        $self->{$attr} = $self->device_attr($attr);
     }
 
-    $self->{'prompt'} = $self->{'user-prompt'};
+    $self->{'prompt'} = $self->{'cli.user-prompt'};
 
     $self->{'command_actions'} = {};
     if( defined( $self->{'cli.command-actions'} ) )        
@@ -121,7 +121,7 @@ sub exec_command
 {
     my $self = shift;
     my $cmd = shift;
-    
+
     my $exp = $self->{'expect'};
     my $sysname = $self->{'device'}->{'SYSNAME'};
     my $failure;
@@ -138,30 +138,47 @@ sub exec_command
     
     if( not $result )
     {
-        $Gerty::log->error
-            ('Could not match the output for ' .
-             $sysname . ': ' . $exp->before());            
-        return undef;
+        my $err = 'Could not match the output for ' .
+            $sysname . ': ' . $exp->before();
+        
+        $Gerty::log->error($err);            
+        return {'success' => 0, 'content' => $err};
     }
     
     if( defined($failure) )
     {
-        $Gerty::log->error
-            ('Failed executing "' . $cmd . '" for ' .
-             $sysname . ': ' . $failure);
-        return undef;
+        my $err = 'Failed executing "' . $cmd . '" for ' .
+            $sysname . ': ' . $failure;
+        
+        $Gerty::log->error($err);
+        return {'success' => 0, 'content' => $err};
     }
 
-    my $ret = $exp->before();
-    $ret =~ s/\r\n/\n/ogm;
+    my $content = $exp->before();
+    $content =~ s/\r\n/\n/ogm;
 
     # outcomment the command from the top if it was echoed
-    if( index($ret, $cmd) == 0 and defined($self->{'cli.comment-string'}) )
+    if( index($content, $cmd) == 0 and defined($self->{'cli.comment-string'}) )
     {
-        $ret = $self->{'cli.comment-string'} . ' ' . $ret;
+        $content = $self->{'cli.comment-string'} . ' ' . $content;
     }
-   
-    return $ret;
+
+    if( defined($self->{'cli.error-regexp'}) and
+        length($self->{'cli.error-regexp'}) > 0 )
+    {
+        foreach my $line (split/\n/, $content)
+        {
+            if( $line =~ $self->{'cli.error-regexp'} )
+            {
+                my $err = 'Command "' . $cmd . '" failed on device "' .
+                    $sysname . '": ' . $line;
+                $Gerty::log->error($err);
+                return {'success' => 0, 'content' => $err};
+            }
+        }
+    }
+    
+    return {'success' => 1, 'content' => $content};
 }
 
 
@@ -173,6 +190,7 @@ sub supported_actions
 }
 
 
+
 sub do_action
 {
     my $self = shift;    
@@ -180,18 +198,27 @@ sub do_action
 
     if( not defined($self->{'command_actions'}{$action}) )
     {
-        $Gerty::log->error('Unsupported action: ' . $action .
-                           ' in Gerty::CLIHandler::Generic');
-        return undef;
+        my $err = 'Unsupported action: ' . $action .
+            ' in Gerty::CLIHandler::Generic';
+        $Gerty::log->error($err);
+        return {'success' => 0, 'content' => $err};
     }
     
-    my $ret = '';
+    my $content = '';
     foreach my $cmd (@{$self->{'command_actions'}{$action}})
     {
-        $ret .= $self->exec_command( $cmd );
+        my $result = $self->exec_command( $cmd );
+        if( $result->{'success'} )
+        {
+            $content .= $result->{'content'};
+        }
+        else
+        {
+            return $result;
+        }
     }
     
-    return $ret;
+    return {'success' => 1, 'content' => $content};
 }
 
 

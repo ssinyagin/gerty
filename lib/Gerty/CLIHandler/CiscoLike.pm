@@ -42,7 +42,7 @@ sub new
     my $admin_already = $self->check_admin_mode();
     if( $admin_already )
     {
-        $self->{'prompt'} = $self->{'admin-prompt'};
+        $self->{'prompt'} = $self->{'cli.admin-prompt'};
     }
 
     if( not $self->init_terminal() )
@@ -70,7 +70,7 @@ sub new
             return undef;
         }
 
-        $self->{'prompt'} = $self->{'admin-prompt'};
+        $self->{'prompt'} = $self->{'cli.admin-prompt'};
     }
         
     return $self;
@@ -88,8 +88,8 @@ sub check_admin_mode
     $exp->send("\r");    
     $exp->expect
         ( $self->{'cli.timeout'},
-          ['-re', $self->{'admin-prompt'}, sub {$admin_mode = 1}],
-          ['-re', $self->{'user-prompt'}],          
+          ['-re', $self->{'cli.admin-prompt'}, sub {$admin_mode = 1}],
+          ['-re', $self->{'cli.user-prompt'}],          
           ['timeout'],
           ['eof']);
     
@@ -105,18 +105,18 @@ sub init_terminal
 
     my @cmd;
     foreach my $item (split(/\s*,\s*/o,
-                               $self->device_attr('init-terminal')))
+                            $self->device_attr('cli.init-terminal')))
     {
-        my $command = $self->device_attr($item . '-command');
+        my $command = $self->device_attr($item . '.command');
         if( defined($command) )
         {
             push(@cmd, $command);                
         }
         else
         {
-            $Gerty::log->error('"init-terminal" lists ' . $item .
+            $Gerty::log->error('"cli.init-terminal" lists ' . $item .
                                ', but the attribute ' .
-                               $item . '-command is not defined for device ' .
+                               $item . '.command is not defined for device ' .
                                $self->{'device'}->{'SYSNAME'});
             return undef;
         }
@@ -145,7 +145,7 @@ sub set_admin_mode
 
     my $exp = $self->{'expect'};
     my $sysname = $self->{'device'}->{'SYSNAME'};
-    my $enablecmd = $self->device_attr('admin-mode-command');
+    my $enablecmd = $self->device_attr('cli.admin-mode.command');
     my $failure;
 
     $Gerty::log->debug('Setting admin mode for ' . $sysname);
@@ -155,8 +155,8 @@ sub set_admin_mode
         ( $self->{'cli.timeout'},
           ['-re', qr/password:/i, sub {
               $exp->send($epasswd . "\r"); exp_continue;}],
-          ['-re', $self->{'admin-prompt'}],
-          ['-re', $self->{'user-prompt'}, sub {
+          ['-re', $self->{'cli.admin-prompt'}],
+          ['-re', $self->{'cli.user-prompt'}, sub {
               $failure = 'Access denied'}],          
           ['timeout', sub {$failure = 'Connection timeout'}],
           ['eof', sub {$failure = 'Connection closed'}]);
@@ -215,39 +215,42 @@ sub config_backup
 {
     my $self = shift;    
 
-    my $cmd = $self->device_attr('show-config-command');
+    my $cmd = $self->device_attr('config-backup.command');
     if( not defined($cmd) )
     {
-        $Gerty::log->error
-            ('Missing parameter show-config-command for ' .
-             $self->{'device'}->{'SYSNAME'});
-        return undef;
+        my $err = 'Missing parameter config-backup.command for ' .
+            $self->{'device'}->{'SYSNAME'};
+        $Gerty::log->error($err);
+        return {'success' => 0, 'content' => $err};
     }
-
-    my $ret = $self->exec_command( $cmd );
-
-    my $excl = $self->device_attr('config-exclude');
-    if( defined($excl) )
+    
+    my $result = $self->exec_command( $cmd );
+    if( $result->{'success'} )
     {
-        foreach my $pattern_name (split(/\s*,\s*/o, $excl))
+        my $excl = $self->device_attr('config-backup.exclude');
+        if( defined($excl) )
         {
-            my $regexp = $self->device_attr($pattern_name . '-regexp');
-            if( defined($regexp) )
+            foreach my $pattern_name (split(/\s*,\s*/o, $excl))
             {
-                $ret =~ s/$regexp//m;
-            }
-            else
-            {
-                $Gerty::log->error
-                    ('config-exclude points to ' . $pattern_name .
-                     ', but parameter ' . $pattern_name .
-                     '-regexp is not defined for ' .
-                     $self->{'device'}->{'SYSNAME'});
+                my $regexp = $self->device_attr($pattern_name . '.regexp');
+                if( defined($regexp) )
+                {
+                    $result->{'content'} =~ s/$regexp//m;
+                }
+                else
+                {
+                    my $err = 'config-backup.exclude points to ' .
+                        $pattern_name . ', but parameter ' . $pattern_name .
+                        '.regexp is not defined for ' .
+                        $self->{'device'}->{'SYSNAME'};                    
+                    $Gerty::log->error($err);
+                    return {'success' => 0, 'content' => $err};
+                }
             }
         }
     }
     
-    return $ret;
+    return $result;
 }
 
 
