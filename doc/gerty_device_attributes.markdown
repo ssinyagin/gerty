@@ -71,6 +71,9 @@ Optional attributes
 * __XXX.postprocess__: if defined, expected to have a name of a Perl module 
   which is called to process the results of the action.
 
+* __admin-mode__: if set to true value, the command handler tries to enter 
+  into administrative mode (*enable* in Cisco terms). 
+
 
    
 Gerty::Access::CLI access handler
@@ -102,10 +105,35 @@ Optional attributes:
   it would be prepended with these characters. For example, 
   *Gerty.CiscoLike.ini* defines it as `!!!`.
   
-* __admin-mode__: if set to true value, the command handler tries to enter 
-  into administrative mode (*enable* in Cisco terms). 
-
+* __cli.cr-before-login__: if set to true, the CLI handler issues a 
+  carriage-return before waiting for a login prompt in a Telnet session.
  
+ 
+
+Gerty::Access::SSHProxy access handler
+--------------------------------------
+
+This access handler connects to an SSH jump-host, and then continues 
+with the normal behavior of Gerty::Access::CLI.
+
+Default values are specified in *Gerty.Default.ini*.
+
+Mandatory attributes:
+
+* __sshproxy.port__ [22]: TCP port for SSH access to the SSH proxy.
+
+* __sshproxy.login-timeout__ [5]: time to expect a shell prompt.
+
+* __sshproxy.ssh-command__ [ssh], __sshproxy.telnet-command__ [telnet]: 
+  shell commands to establish a connection from the proxy to the remote host.
+
+* __sshproxy.hostname__: SSH proxy host
+
+* __sshproxy.username__: SSH proxy login
+
+* __sshproxy.password__: SSH proxy password. If public key authentication 
+  is used, this attribute must be set to some dummy value.
+  
 
 
 Gerty::CLIHandler::Generic command handler

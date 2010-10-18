@@ -59,7 +59,6 @@ TO DO
 * centralized INI reader
 * blank out passwords
 * write a user guide
-* automate jumphost access
 * automate backup for Cisco files, like "vlan.dat"
    (suggested by Viktor Steinmann <stony@stony.com>)
 

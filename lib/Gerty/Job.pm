@@ -163,7 +163,7 @@ sub retrieve_device_attr
     my $attr = shift;
 
     $Gerty::log->debug('Retrieving attribute "' . $attr .
-                       '" for device "' . $dev->{'SYSNAME'});
+                       '" for device "' . $dev->{'SYSNAME'} . '"');
 
     # First look up at the job level
     my $ret = $self->attr($attr);
@@ -429,75 +429,88 @@ sub execute
         my $actions = $handler->supported_actions();
         $Gerty::log->debug('Actions supported for ' . $dev->{'SYSNAME'} .
                            ': ' . join(', ', @{$actions}));
+
+        my $actions_count = 0;
         
         foreach my $action (@{$actions})
         {
-            if( $self->device_attr($dev, 'do.' . $action) )
+            if( not $self->device_attr($dev, 'do.' . $action) )
             {
-                my $path = $self->device_attr($dev, $action . '.path');
+                next;
+            }
+
+            my $path = $self->device_attr($dev, $action . '.path');
+            if( not defined($path) )
+            {
+                $Gerty::log->debug
+                    ($action . '.path is not defined for ' .
+                     $dev->{'SYSNAME'} . ', trying output.default-path');
+                $path = $self->device_attr($dev, 'output.default-path');
                 if( not defined($path) )
                 {
-                    $Gerty::log->debug
-                        ($action . '.path is not defined for ' .
-                         $dev->{'SYSNAME'} . ', trying output.default-path');
-                    $path = $self->device_attr($dev, 'output.default-path');
-                    if( not defined($path) )
-                    {
-                        $Gerty::log->error
-                            ('Neither ' . $action .
-                             '.path nor output.default-path is defined for ' .
-                             $dev->{'SYSNAME'} . '. Skipping the action: ' .
-                             $action);
-                        next;
-                    }
-                }
-
-                if( not -d $path )
-                {
-                    $Gerty::log->critical
-                        ('No such directory: "' . $path .
-                         '". Skipping action ' .  $action .
-                         ' for device ' . $dev->{'SYSNAME'});
+                    $Gerty::log->error
+                        ('Neither ' . $action .
+                         '.path nor output.default-path is defined for ' .
+                         $dev->{'SYSNAME'} . '. Skipping the action: ' .
+                         $action);
                     next;
                 }
-                
-                my $fname = $path . '/' .
-                    $dev->{'SYSNAME'} . '.' . $action;
-                
-                my $fh = new IO::File($fname, 'w');
-                if( not $fh )
-                {
-                    $Gerty::log->critical('Cannot open file ' .
-                                          $fname . ' for writing: ' . $!);
-                    return next;
-                }
-                
-                my $out = $handler->do_action($action);
-                if( defined($out) )
-                {
-                    $fh->print($out);
-                }
-                
-                $fh->close();
-
-                # If postprocess handler is defined, hand over the control
-                # immediately (must not take too much time, as we still have
-                # CLI session open)
-
-                my $pp_attr = $action . '.postprocess';
-                if( defined( $self->device_attr($dev, $pp_attr) ) )
-                {
-                    my $pp_handler = $self->load_and_execute
-                        ($dev, $pp_attr, 'new',
-                         {'job' => $self, 'device' => $dev});
-                    
-                    if( $pp_handler )
-                    {
-                        $pp_attr->process($fname);
-                    }                    
-                }
             }
-        }                
+            
+            if( not -d $path )
+            {
+                $Gerty::log->critical
+                    ('No such directory: "' . $path .
+                     '". Skipping action ' .  $action .
+                     ' for device ' . $dev->{'SYSNAME'});
+                next;
+            }
+            
+            my $fname = $path . '/' .
+                $dev->{'SYSNAME'} . '.' . $action;
+            
+            my $fh = new IO::File($fname, 'w');
+            if( not $fh )
+            {
+                $Gerty::log->critical('Cannot open file ' .
+                                      $fname . ' for writing: ' . $!);
+                return next;
+            }
+            
+            my $out = $handler->do_action($action);
+            if( defined($out) )
+            {
+                $fh->print($out);
+            }
+            
+            $fh->close();
+            $Gerty::log->info('Wrote action result to ' . $fname);
+                              
+            # If postprocess handler is defined, hand over the control
+            # immediately (must not take too much time, as we still have
+            # CLI session open)
+            
+            my $pp_attr = $action . '.postprocess';
+            if( defined( $self->device_attr($dev, $pp_attr) ) )
+            {
+                my $pp_handler = $self->load_and_execute
+                    ($dev, $pp_attr, 'new',
+                     {'job' => $self, 'device' => $dev});
+                
+                if( $pp_handler )
+                {
+                    $pp_attr->process($fname);
+                }                    
+            }
+            
+            $actions_count++;
+        }
+
+        if( not $actions_count )
+        {
+            $Gerty::log->warning('Did not execute any actions for device: ' .
+                                 $dev->{'SYSNAME'});
+        }
     }
 }
 

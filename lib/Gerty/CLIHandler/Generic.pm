@@ -87,7 +87,8 @@ sub exec_command
     my $sysname = $self->{'device'}->{'SYSNAME'};
     my $failure;
 
-    $Gerty::log->debug('Running a command: "' . $cmd . '" on "' . $sysname);
+    $Gerty::log->debug('Running a command: "' . $cmd . '" on "' .
+                       $sysname . '"');
     
     $exp->send($cmd . "\r");    
     my $result = $exp->expect

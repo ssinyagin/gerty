@@ -106,7 +106,7 @@ sub new
          'cli.logfile-timeformat', 'cli.timeout', 'cli.initial-prompt')
     {
         my $val = $self->device_attr($attr);
-        if( not defined($val) )
+        if( not defined($val) )           
         {
             $Gerty::log->error
                 ('Missing mandatory attribute "' .
@@ -115,7 +115,18 @@ sub new
         }
         $self->{'attr'}{$attr} = $val;        
     }
+
+    # Fetch optional attributes
     
+    foreach my $attr ('cli.cr-before-login')
+    {
+        my $val = $self->device_attr($attr);
+        if( defined($val) )
+        {
+            $self->{'attr'}{$attr} = $val;        
+        }
+    }
+
     return $self;
 }
 
@@ -155,8 +166,89 @@ sub connect
 {
     my $self = shift;
 
+    my $exp = $self->_open_expect();
+    
     my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
-    my $method = $self->{'attr'}{'cli.access-method'};
+    my $method = $self->{'attr'}{'cli.access-method'};            
+    my $ipaddr = $self->{'options'}->{'device'}{'ADDRESS'};
+    
+    $Gerty::log->debug('Connecting to ' . $ipaddr . ' with ' . $method);
+
+    if( $method eq 'ssh' )
+    {
+        my @exec_args =
+            ($Gerty::external_executables{'ssh'},
+             '-o', 'NumberOfPasswordPrompts=1',
+             '-p', $self->{'attr'}{'cli.ssh-port'},
+             '-l', $self->{'attr'}{'cli.auth-username'},
+             $ipaddr);
+
+        if( not $exp->spawn(@exec_args) )
+        {
+            $Gerty::log->error('Failed spawning command "' .
+                               join(' ', @exec_args) . '": ' . $!);
+            return undef;
+        }
+
+        if( not $self->_login_ssh($exp) )
+        {
+            return undef;
+        }        
+    }
+    elsif( $method eq 'telnet' )
+    {
+        my @exec_args =
+            ($Gerty::external_executables{'telnet'},
+             $ipaddr,
+             $self->{'attr'}{'cli.telnet-port'});
+        
+        if( not $exp->spawn(@exec_args) )
+        {
+            $Gerty::log->error('Failed spawning command "' .
+                               join(' ', @exec_args) . '": ' . $!);
+            return undef;
+        }
+
+        if( not $self->_login_telnet($exp) )
+        {
+            return undef;
+        }        
+    }
+    
+    $Gerty::log->debug('Logged in at ' . $ipaddr);
+    $self->{'expect'} = $exp;
+    return $exp;
+}
+
+
+sub close
+{
+    my $self = shift;
+
+    if( defined($self->{'expect'}) )
+    {
+        $self->{'expect'}->hard_close();
+        undef $self->{'expect'};
+    }
+}
+
+
+sub expect
+{
+    my $self = shift;
+
+    return $self->{'expect'};
+}
+
+
+
+# Creates an Expect object and initializes logging
+sub _open_expect
+{
+    my $self = shift;
+
+    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
+
     my $exp = new Expect();
     if( not $Gerty::expect_debug )
     {
@@ -187,138 +279,115 @@ sub connect
             ('cli.log-dir is not specified for ' . $sysname .
              ', CLI logging is disabled');
     }
-            
-    my $timeout =  $self->{'attr'}{'cli.timeout'};
-    my $prompt = $self->{'attr'}{'cli.initial-prompt'};
-    my $ipaddr = $self->{'options'}->{'device'}{'ADDRESS'};
-    
-    $Gerty::log->debug('Connecting to ' . $ipaddr . ' with ' . $method);
 
-    if( $method eq 'ssh' )
-    {
-        my @exec_args =
-            ($Gerty::external_executables{'ssh'},
-             '-o', 'NumberOfPasswordPrompts=1',
-             '-p', $self->{'attr'}{'cli.ssh-port'},
-             '-l', $self->{'attr'}{'cli.auth-username'},
-             $ipaddr);
-
-        if( not $exp->spawn(@exec_args) )
-        {
-            $Gerty::log->error('Failed spawning command "' .
-                               join(' ', @exec_args) . '": ' . $!);
-            return undef;
-        }
-            
-        # Handle unknown host and password
-        my $password = $self->{'attr'}{'cli.auth-password'};
-        my $failure;
-        
-        if( not defined
-            $exp->expect
-            ( $timeout,
-              ['-re', qr/password:/i, sub {
-                  $exp->send($password . "\r"); exp_continue;}],
-              ['-re', $prompt],
-              ['timeout', sub {$failure = 'Connection timeout'}],
-              ['-re', qr/closed/i, sub {$failure = 'Connection closed'}],
-              ['eof', sub {$failure = 'Connection closed'}]) )
-        {
-            $Gerty::log->error
-                ('Could not match the output for ' . $sysname . ': ' . 
-                 $exp->before());            
-            $exp->hard_close();
-            return undef;
-        }
-        
-        if( defined($failure))
-        {
-            $Gerty::log->error
-                ('Failed logging into ' . $sysname . ': ' . $failure);
-            $exp->hard_close();
-            return undef;
-        }
-    }
-    elsif( $method eq 'telnet' )
-    {
-        my @exec_args =
-            ($Gerty::external_executables{'telnet'},
-             $self->{'options'}->{'device'}{'ADDRESS'},
-             $self->{'attr'}{'cli.telnet-port'});
-        
-        if( not $exp->spawn(@exec_args) )
-        {
-            $Gerty::log->error('Failed spawning command "' .
-                               join(' ', @exec_args) . '": ' . $!);
-            return undef;
-        }
-            
-        # Log into the remote system
-        my $login = $self->{'attr'}{'cli.auth-username'};
-        my $password = $self->{'attr'}{'cli.auth-password'};
-        my $failure;
-        
-        if( not defined
-            $exp->expect
-            ( $timeout,
-              ['-re', qr/login:/i, sub {
-                  $exp->send($login . "\r"); exp_continue;}],
-              ['-re', qr/name:/i, sub {
-                  $exp->send($login . "\r"); exp_continue;}],
-              ['-re', qr/password:/i, sub {
-                  $exp->send($password . "\r"); exp_continue;}],
-              ['-re', qr/incorrect/i, sub {$failure = 'Access denied'}],
-              ['-re', qr/denied/i, sub {$failure = 'Access denied'}],
-              ['-re', qr/fail/i, sub {$failure = 'Access denied'}],
-              ['-re', qr/refused/i, sub {$failure = 'Connection refused'}],
-              ['timeout', sub {$failure = 'Connection timeout'}],
-              ['eof', sub {$failure = 'Connection closed'}],
-              ['-re', $prompt] ) )
-        {
-            $Gerty::log->error
-                ('Could not match the output for ' . $sysname . ': ' . 
-                 $exp->before());            
-            $exp->hard_close();
-            return undef;
-        }
-            
-        if( defined($failure) )
-        {
-            $Gerty::log->error
-                ('Failed connecting to ' . $sysname . ': ' . $failure);
-            $exp->hard_close();
-            return undef;
-        }
-    }
-
-    $Gerty::log->debug('Logged in at ' . $ipaddr);
-    $self->{'expect'} = $exp;
     return $exp;
 }
 
-
-sub close
-{
-    my $self = shift;
-
-    if( defined($self->{'expect'}) )
-    {
-        $self->{'expect'}->hard_close();
-        undef $self->{'expect'};
-    }
-}
-
-
-sub expect
-{
-    my $self = shift;
-
-    return $self->{'expect'};
-}
-
-
     
+# login sequence after launching the SSH executable
+sub _login_ssh
+{
+    my $self = shift;
+    my $exp = shift;
+
+    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
+
+    # Handle unknown host and password
+    my $password = $self->{'attr'}{'cli.auth-password'};
+    my $timeout =  $self->{'attr'}{'cli.timeout'};
+    my $prompt = $self->{'attr'}{'cli.initial-prompt'};
+    my $failure;
+    
+    if( not defined
+        $exp->expect
+        ( $timeout,
+          ['-re', qr/yes\/no.*/i, sub {
+              $exp->send("yes\r"); exp_continue;}],
+          ['-re', qr/password:/i, sub {
+              $exp->send($password . "\r"); exp_continue;}],
+          ['-re', $prompt],
+          ['timeout', sub {$failure = 'Connection timeout'}],
+          ['-re', qr/closed/i, sub {$failure = 'Connection closed'}],
+          ['eof', sub {$failure = 'Connection closed'}]) )
+    {
+        $Gerty::log->error
+            ('Could not match the output for ' . $sysname . ': ' . 
+             $exp->before());            
+        $exp->hard_close();
+        return undef;
+    }
         
+    if( defined($failure))
+    {
+        $Gerty::log->error
+            ('Failed logging into ' . $sysname . ': ' . $failure);
+        $exp->hard_close();
+        return undef;
+    }
+
+    return 1;    
+}
+
+
+
+# login sequence after launching the Telnet executable
+sub _login_telnet
+{ 
+    my $self = shift;
+    my $exp = shift;
+
+    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
+
+    # Log into the remote system
+    my $login = $self->{'attr'}{'cli.auth-username'};
+    my $password = $self->{'attr'}{'cli.auth-password'};
+    my $timeout =  $self->{'attr'}{'cli.timeout'};
+    my $prompt = $self->{'attr'}{'cli.initial-prompt'};
+    my $failure;
+    
+    if( $self->{'attr'}{'cli.cr-before-login'} )
+    {
+        $exp->send("\r");
+    }
+        
+    if( not defined
+        $exp->expect
+        ( $timeout,
+          ['-re', qr/Escape\s+character\s+is\S+/i, sub {
+              exp_continue; }],
+          ['-re', qr/login:/i, sub {
+              $exp->send($login . "\r"); exp_continue;}],
+          ['-re', qr/name:/i, sub {
+              $exp->send($login . "\r"); exp_continue;}],
+          ['-re', qr/password:/i, sub {
+              $exp->send($password . "\r"); exp_continue;}],
+          ['-re', qr/incorrect/i, sub {$failure = 'Access denied'}],
+          ['-re', qr/denied/i, sub {$failure = 'Access denied'}],
+          ['-re', qr/fail/i, sub {$failure = 'Access denied'}],
+          ['-re', qr/refused/i, sub {$failure = 'Connection refused'}],
+          ['timeout', sub {$failure = 'Connection timeout'}],
+          ['eof', sub {$failure = 'Connection closed'}],
+          ['-re', $prompt] ) )
+    {
+        $Gerty::log->error
+            ('Could not match the output for ' . $sysname . ': ' . 
+             $exp->before());            
+        $exp->hard_close();
+        return undef;
+    }
+    
+    if( defined($failure) )
+    {
+        $Gerty::log->error
+            ('Failed connecting to ' . $sysname . ': ' . $failure);
+        $exp->hard_close();
+        return undef;
+    }
+
+    return 1;
+}
+
+
              
 1;
 
