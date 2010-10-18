@@ -31,7 +31,7 @@ sub new
     bless $self, $class;
 
     # check mandatory attributes
-    foreach my $attr ('source-type', 'source-fields', 'devclass')
+    foreach my $attr ('source.type', 'source.fields', 'devclass')
     {
         if( not defined($self->{'options'}{$attr}) )
         {
@@ -42,7 +42,7 @@ sub new
         }
     }
 
-    my $driver = $self->{'options'}{'source-type'};
+    my $driver = $self->{'options'}{'source.type'};
     eval(sprintf('require %s', $driver));
     if( $@ )
     {
@@ -83,9 +83,9 @@ sub retrieve_devices
 {
     my $self = shift;
     
-    # Retrieve raw tabular data and process it according to 'source-fields'
+    # Retrieve raw tabular data and process it according to 'source.fields'
     my $data = $self->{'driver'}->retrieve_devices();
-    my @fields = split(/\s*,\s*/o, $self->{'options'}{'source-fields'});
+    my @fields = split(/\s*,\s*/o, $self->{'options'}{'source.fields'});
                        
     my $ret = [];
     foreach my $row ( @{$data} )

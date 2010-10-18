@@ -57,11 +57,11 @@ defaults (with `-default` suffix).
 Mandatory attributes in [devices ...]
 -------------------------------------
 
-* __source-type__: defines a Perl class name that handles the list of devices.
+* __source.type__: defines a Perl class name that handles the list of devices.
   Possible values are: `Gerty::DeviceList::File`, `Gerty::DeviceList::DBI`, or 
   some other types implemented in plugins or in site-specific Perl modules.
   
-* __source-fields__: comma-separated list of keywords. The list driver 
+* __source.fields__: comma-separated list of keywords. The list driver 
   fetches arraus of values, and this parameter defines in which order these 
   values should be interpreted. Valid keywords are: 
   + *SYSNAME*: defines a device name
@@ -84,16 +84,16 @@ be added.
 
 For this source type, several attributes are mandatory:
 
-* __source-filename__: fully qualified file name to read the devices from.
+* __source.filename__: fully qualified file name to read the devices from.
 
-* __source-filetype__: defines the kind of data. Supported values: `plain`.
+* __source.filetype__: defines the kind of data. Supported values: `plain`.
 
-* __source-delimiter__: required for plain file type. Defines a regular 
+* __source.delimiter__: required for plain file type. Defines a regular 
   expression that is used to split the rows into columns.
 
 Optional attributes:
 
-* __source-comment__: regular expression used to identify a comment in the 
+* __source.comment__: regular expression used to identify a comment in the 
   source file. Default value: `^\#`.
 
 

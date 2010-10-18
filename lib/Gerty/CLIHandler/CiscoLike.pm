@@ -55,11 +55,11 @@ sub new
     
     if( (not $admin_already) and $self->{'admin-mode'} )
     {
-        my $epasswd = $self->device_attr('cli-auth-epassword');
+        my $epasswd = $self->device_attr('cli.auth-epassword');
         if( not defined( $epasswd ) )
         {
             $Gerty::log->error
-                ('Missing attribute "cli-auth-epassword" for ' . $sysname);
+                ('Missing attribute "cli.auth-epassword" for ' . $sysname);
             return undef;
         }
         
@@ -87,7 +87,7 @@ sub check_admin_mode
     
     $exp->send("\r");    
     $exp->expect
-        ( $self->{'cli-timeout'},
+        ( $self->{'cli.timeout'},
           ['-re', $self->{'admin-prompt'}, sub {$admin_mode = 1}],
           ['-re', $self->{'user-prompt'}],          
           ['timeout'],
@@ -152,7 +152,7 @@ sub set_admin_mode
 
     $exp->send($enablecmd . "\r");    
     my $result = $exp->expect
-        ( $self->{'cli-timeout'},
+        ( $self->{'cli.timeout'},
           ['-re', qr/password:/i, sub {
               $exp->send($epasswd . "\r"); exp_continue;}],
           ['-re', $self->{'admin-prompt'}],

@@ -18,9 +18,9 @@ The attribute values are derived in a hierarchical manner, as follows:
    defined in device lists.
 6. The *[job]* section in Job definition file may override attributes defined 
    at the siteconfig level.
-7. If the value is not found during previous steps, hey are repeated by adding 
-   `-default` suffix to the attribute name. This allows to set more specfic 
-   values to device lists or classes.
+7. If the value is not found during previous steps, they are repeated 
+   by adding `:default` suffix to the attribute name. This allows 
+   setting more specfic values to device lists or classes.
 
 
 Gerty distribution supplies a number of pre-defined device classes, as follows:
@@ -53,7 +53,7 @@ Default values are specified in *Gerty.Default.ini*.
 * __command-handler__: refers to a Perl class that processes the CLI
   input/output. Example: *Gerty::CLIHandler::CiscoLike*.
 
-* __default-output-path__: directory path where the output of command actions 
+* __output.default-path__: directory path where the output of command actions 
   would be stored if not overwritten by *XXX-path* attribute.
 
 
@@ -61,14 +61,14 @@ Default values are specified in *Gerty.Default.ini*.
 Optional attributes
 -------------------
 
-* __do-XXX__: if the value is true, execute the action XXX on the device. 
+* __do.XXX__: if the value is true, execute the action XXX on the device. 
   Action names are defined by the command handlers, such 
   as *Gerty::CLIHandler::CiscoLike*. 
 
-* __XXX-path__: store the action results in a given directory, instead of the 
-  one specified by *default-output-path*
+* __XXX.path__: store the action results in a given directory, instead of the 
+  one specified by *output.default-path*
 
-* __XXX-postprocess__: if defined, expected to have a name of a Perl module 
+* __XXX.postprocess__: if defined, expected to have a name of a Perl module 
   which is called to process the results of the action.
 
 
@@ -80,25 +80,25 @@ Default values are specified in *Gerty.Default.ini*.
 
 Mandatory attributes:
 
-* __cli-ssh-port__ [22], __cli-telnet-port__ [23]: TCP ports for SSH 
+* __cli.ssh-port__ [22], __cli.telnet-port__ [23]: TCP ports for SSH 
   and Telnet access.
 
-* __cli-timeout__ [15]: defines the command-line timeout in seconds.
+* __cli.timeout__ [15]: defines the command-line timeout in seconds.
 
-* __cli-initial-prompt__: Regular expression that is used to identify the 
+* __cli.initial-prompt__: Regular expression that is used to identify the 
   command-line prompt immediately after logging in. Default: `^.+[\#\>\$]`.
 
 Optional attributes:
 
-* __cli-auth-username__, __cli-auth-password__: login credentials. Mandatory if
+* __cli.auth-username__, __cli.auth-password__: login credentials. Mandatory if
   *credentials-source* is set to *inline*.
 
-* __cli-log-dir__: directory where a copy of all CLI output is saved.
+* __cli.log-dir__: directory where a copy of all CLI output is saved.
 
-* __cli-logfile-timeformat__: (mandatory if *cli-log-dir* is defined) 
+* __cli.logfile-timeformat__: (mandatory if *cli.log-dir* is defined) 
   *strftime*-formatted suffix which is added to the output file.
   
-* __cli-comment-string__: if the remote side echoes back the entered command,
+* __cli.comment-string__: if the remote side echoes back the entered command,
   it would be prepended with these characters. For example, 
   *Gerty.CiscoLike.ini* defines it as `!!!`.
   
@@ -152,7 +152,7 @@ Mandatory attributes:
 
 Optional attributes:
 
-* __cli-auth-epassword__: enable password. Not required if the user is 
+* __cli.auth-epassword__: enable password. Not required if the user is 
   automatically privileged.
 
 * __config-exclude__: comma-separated list of attributes. Default: 

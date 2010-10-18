@@ -55,8 +55,8 @@ sub new
     $self->{'expect'} = $acc->expect();
 
     foreach my $attribute
-        ( 'admin-mode', 'cli-timeout', 'user-prompt', 'admin-prompt',
-          'cli-comment-string' )
+        ( 'admin-mode', 'cli.timeout', 'user-prompt', 'admin-prompt',
+          'cli.comment-string' )
     {
         $self->{$attribute} = $self->device_attr($attribute);
     }
@@ -91,7 +91,7 @@ sub exec_command
     
     $exp->send($cmd . "\r");    
     my $result = $exp->expect
-        ( $self->{'cli-timeout'},
+        ( $self->{'cli.timeout'},
           ['-re', $self->{'prompt'}],
           ['timeout', sub {$failure = 'Connection timeout'}],
           ['eof', sub {$failure = 'Connection closed'}]);
@@ -116,9 +116,9 @@ sub exec_command
     $ret =~ s/\r\n/\n/ogm;
 
     # outcomment the command from the top if it was echoed
-    if( index($ret, $cmd) == 0 and defined($self->{'cli-comment-string'}) )
+    if( index($ret, $cmd) == 0 and defined($self->{'cli.comment-string'}) )
     {
-        $ret = $self->{'cli-comment-string'} . ' ' . $ret;
+        $ret = $self->{'cli.comment-string'} . ' ' . $ret;
     }
    
     return $ret;

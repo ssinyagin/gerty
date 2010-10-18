@@ -28,7 +28,7 @@ our %filetypes =
     ('plain' => {
          'process' => \&process_plain,
          'attrs' => {
-             'source-delimiter' => 1,
+             'source.delimiter' => 1,
          },
      },
      );
@@ -44,7 +44,7 @@ sub new
     bless $self, $class;
 
     # check mandatory attributes
-    foreach my $attr ('source-filename', 'source-filetype')
+    foreach my $attr ('source.filename', 'source.filetype')
     {
         if( not defined($self->{'options'}{$attr}) )
         {
@@ -55,7 +55,7 @@ sub new
         }        
     }
 
-    my $ftype = $self->{'options'}{'source-filetype'};
+    my $ftype = $self->{'options'}{'source.filetype'};
     if( not defined( $filetypes{$ftype} ) )
     {
         $Gerty::log->critical
@@ -64,10 +64,10 @@ sub new
         return undef;
     }
 
-    if( not -r $self->{'options'}{'source-filename'} )
+    if( not -r $self->{'options'}{'source.filename'} )
     {
         $Gerty::log->critical
-            ('File ' . $self->{'options'}{'source-filename'} .
+            ('File ' . $self->{'options'}{'source.filename'} .
              ' does not exist or is unreadable');
         return undef;
     }
@@ -95,9 +95,9 @@ sub retrieve_devices
     my $self = shift;
 
     $Gerty::log->debug('Gerty::DeviceList::File - processing ' .
-                       $self->{'options'}{'source-filename'});
+                       $self->{'options'}{'source.filename'});
     
-    my $ftype = $self->{'options'}{'source-filetype'};
+    my $ftype = $self->{'options'}{'source.filetype'};
     my $ret = &{$filetypes{$ftype}{'process'}}($self);
     
     $Gerty::log->debug('Gerty::DeviceList::File - retrieved  ' .
@@ -111,7 +111,7 @@ sub process_plain
 {
     my $self = shift;
 
-    my $filename = $self->{'options'}{'source-filename'};
+    my $filename = $self->{'options'}{'source.filename'};
     my $fh = new IO::File($filename, 'r');
     if( not $fh )
     {
@@ -121,8 +121,8 @@ sub process_plain
 
     my $ret = [];
     
-    my $delimiter = $self->{'options'}{'source-delimiter'};
-    my $comment = $self->{'options'}{'source-comment'};
+    my $delimiter = $self->{'options'}{'source.delimiter'};
+    my $comment = $self->{'options'}{'source.comment'};
     $comment = '^\#' unless defined $comment;
 
     my $lineno = 0;

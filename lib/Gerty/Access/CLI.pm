@@ -54,7 +54,7 @@ sub new
 
     # Fetch mandatory attributes
 
-    foreach my $attr ('cli-access-method')
+    foreach my $attr ('cli.access-method')
     {
         my $val = $self->device_attr($attr);
         if( not defined($val) )
@@ -70,11 +70,11 @@ sub new
         }       
     }
 
-    if( not $known_access_methods{ $self->{'attr'}{'cli-access-method'} } )
+    if( not $known_access_methods{ $self->{'attr'}{'cli.access-method'} } )
     {
         $Gerty::log->error
-            ('Unsupported cli-access-method value: "' .
-             $self->{'attr'}{'cli-access-method'} . '" for device: ' .
+            ('Unsupported cli.access-method value: "' .
+             $self->{'attr'}{'cli.access-method'} . '" for device: ' .
              $sysname);
         return undef;
     }
@@ -82,7 +82,7 @@ sub new
     
     # Fetch mandatory credentials
     
-    foreach my $attr ('cli-auth-username', 'cli-auth-password')
+    foreach my $attr ('cli.auth-username', 'cli.auth-password')
     {
         my $val = $self->device_credentials_attr($attr);
         if( not defined($val) )
@@ -102,8 +102,8 @@ sub new
     # Fetch other attributes
 
     foreach my $attr
-        ('cli-ssh-port', 'cli-telnet-port', 'cli-log-dir', 
-         'cli-logfile-timeformat', 'cli-timeout', 'cli-initial-prompt')
+        ('cli.ssh-port', 'cli.telnet-port', 'cli.log-dir', 
+         'cli.logfile-timeformat', 'cli.timeout', 'cli.initial-prompt')
     {
         my $val = $self->device_attr($attr);
         if( not defined($val) )
@@ -156,20 +156,20 @@ sub connect
     my $self = shift;
 
     my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
-    my $method = $self->{'attr'}{'cli-access-method'};
+    my $method = $self->{'attr'}{'cli.access-method'};
     my $exp = new Expect();
     if( not $Gerty::expect_debug )
     {
         $exp->log_stdout(0);
     }
     
-    my $logdir = $self->{'attr'}{'cli-log-dir'};
+    my $logdir = $self->{'attr'}{'cli.log-dir'};
     if( length($logdir) > 0 )
     {
         if( not -d $logdir )
         {
             $Gerty::log->warning
-                ('The directory ' . $logdir . ' is specified as cli-log-dir ' .
+                ('The directory ' . $logdir . ' is specified as cli.log-dir ' .
                  ' for ' . $sysname . ' does not exist ');
         }
         else
@@ -177,19 +177,19 @@ sub connect
             $exp->log_file
                 (sprintf('%s/%s.%s.log',
                          $logdir, $sysname,
-                         time2str($self->{'attr'}{'cli-logfile-timeformat'},
+                         time2str($self->{'attr'}{'cli.logfile-timeformat'},
                                   time())));
         }
     }
     else
     {
         $Gerty::log->info
-            ('cli-log-dir is not specified for ' . $sysname .
+            ('cli.log-dir is not specified for ' . $sysname .
              ', CLI logging is disabled');
     }
             
-    my $timeout =  $self->{'attr'}{'cli-timeout'};
-    my $prompt = $self->{'attr'}{'cli-initial-prompt'};
+    my $timeout =  $self->{'attr'}{'cli.timeout'};
+    my $prompt = $self->{'attr'}{'cli.initial-prompt'};
     my $ipaddr = $self->{'options'}->{'device'}{'ADDRESS'};
     
     $Gerty::log->debug('Connecting to ' . $ipaddr . ' with ' . $method);
@@ -199,8 +199,8 @@ sub connect
         my @exec_args =
             ($Gerty::external_executables{'ssh'},
              '-o', 'NumberOfPasswordPrompts=1',
-             '-p', $self->{'attr'}{'cli-ssh-port'},
-             '-l', $self->{'attr'}{'cli-auth-username'},
+             '-p', $self->{'attr'}{'cli.ssh-port'},
+             '-l', $self->{'attr'}{'cli.auth-username'},
              $ipaddr);
 
         if( not $exp->spawn(@exec_args) )
@@ -211,7 +211,7 @@ sub connect
         }
             
         # Handle unknown host and password
-        my $password = $self->{'attr'}{'cli-auth-password'};
+        my $password = $self->{'attr'}{'cli.auth-password'};
         my $failure;
         
         if( not defined
@@ -244,7 +244,7 @@ sub connect
         my @exec_args =
             ($Gerty::external_executables{'telnet'},
              $self->{'options'}->{'device'}{'ADDRESS'},
-             $self->{'attr'}{'cli-telnet-port'});
+             $self->{'attr'}{'cli.telnet-port'});
         
         if( not $exp->spawn(@exec_args) )
         {
@@ -254,8 +254,8 @@ sub connect
         }
             
         # Log into the remote system
-        my $login = $self->{'attr'}{'cli-auth-username'};
-        my $password = $self->{'attr'}{'cli-auth-password'};
+        my $login = $self->{'attr'}{'cli.auth-username'};
+        my $password = $self->{'attr'}{'cli.auth-password'};
         my $failure;
         
         if( not defined

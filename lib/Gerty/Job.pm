@@ -218,7 +218,7 @@ sub device_attr
     my $value = $self->retrieve_device_attr($dev, $attr);
     if( not defined($value) )
     {
-        $value = $self->retrieve_device_attr($dev, $attr . '-default');
+        $value = $self->retrieve_device_attr($dev, $attr . ':default');
     }
     return undef unless defined($value);
 
@@ -432,20 +432,20 @@ sub execute
         
         foreach my $action (@{$actions})
         {
-            if( $self->device_attr($dev, 'do-' . $action) )
+            if( $self->device_attr($dev, 'do.' . $action) )
             {
-                my $path = $self->device_attr($dev, $action . '-path');
+                my $path = $self->device_attr($dev, $action . '.path');
                 if( not defined($path) )
                 {
                     $Gerty::log->debug
-                        ($action . '-path is not defined for ' .
-                         $dev->{'SYSNAME'} . ', trying default-output-path');
-                    $path = $self->device_attr($dev, 'default-output-path');
+                        ($action . '.path is not defined for ' .
+                         $dev->{'SYSNAME'} . ', trying output.default-path');
+                    $path = $self->device_attr($dev, 'output.default-path');
                     if( not defined($path) )
                     {
                         $Gerty::log->error
                             ('Neither ' . $action .
-                             '-path nor default-output-path is defined for ' .
+                             '.path nor output.default-path is defined for ' .
                              $dev->{'SYSNAME'} . '. Skipping the action: ' .
                              $action);
                         next;
@@ -484,7 +484,7 @@ sub execute
                 # immediately (must not take too much time, as we still have
                 # CLI session open)
 
-                my $pp_attr = $action . '-postprocess';
+                my $pp_attr = $action . '.postprocess';
                 if( defined( $self->device_attr($dev, $pp_attr) ) )
                 {
                     my $pp_handler = $self->load_and_execute
