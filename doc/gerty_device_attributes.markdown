@@ -142,11 +142,16 @@ Gerty::CLIHandler::Generic command handler
 This handler implements basic command execution and is designed for being 
 inherited by other handlers, such as *Gerty::CLIHandler::CiscoLike*.
 
-Actions:
+Optional parameters:
 
-* __exec-command__: expects the attribute *exec-command* to contain a 
-  comma-separated list of commands which would be executed on the device.
+* __cli.command-actions__: comma-separated list of new action names.
+  Each action (XXX) must be accompanied by a corresponding __XXX.command__ or
+  __XXX.command-N__
 
+* __XXX.multicommand: if set to a nonzero integer, defines the number of 
+  subsequent commands that comprise the action. Each command must be defined 
+  in __XXX.command-N__ attribute.
+  
 
   
 

@@ -56,13 +56,52 @@ sub new
 
     foreach my $attribute
         ( 'admin-mode', 'cli.timeout', 'user-prompt', 'admin-prompt',
-          'cli.comment-string' )
+          'cli.comment-string', 'cli.command-actions' )
     {
         $self->{$attribute} = $self->device_attr($attribute);
     }
 
     $self->{'prompt'} = $self->{'user-prompt'};
-    
+
+    $self->{'command_actions'} = {};
+    if( defined( $self->{'cli.command-actions'} ) )        
+    {
+        foreach my $action (split(/\s*,\s*/o, $self->{'cli.command-actions'}))
+        {
+            my $multicmd = $self->device_attr($action . '.multicommand');
+
+            my @attrs;
+            if( $multicmd and $multicmd > 0 )
+            {
+                foreach my $i (1 .. $multicmd)
+                {
+                    push( @attrs, $action . '.command-' . $i );
+                }
+            }
+            else
+            {
+                push( @attrs, $action . '.command' );
+            }
+
+            $self->{'command_actions'}{$action} = [];
+            
+            foreach my $attr (@attrs)
+            {
+                my $cmd = $self->device_attr($attr);
+                if( not defined($cmd) )
+                {
+                    $Gerty::log->error
+                        ('cli.command-actions defines the action "' .
+                         $action . '", but attribute "' . $attr .
+                         '" is not defined for device: ' .
+                         $self->{'device'}->{'SYSNAME'});
+                    return undef;
+                }
+                push( @{$self->{'command_actions'}{$action}}, $cmd );
+            }            
+        }                
+    }
+
     return $self;
 }
 
@@ -129,8 +168,8 @@ sub exec_command
 
 sub supported_actions
 {
-    my $self = shift;    
-    return ['exec-command'];
+    my $self = shift;
+    return [ keys %{$self->{'command_actions'}} ];
 }
 
 
@@ -139,23 +178,15 @@ sub do_action
     my $self = shift;    
     my $action = shift;
 
-    if( $action ne 'exec-command' )
+    if( not defined($self->{'command_actions'}{$action}) )
     {
         $Gerty::log->error('Unsupported action: ' . $action .
                            ' in Gerty::CLIHandler::Generic');
         return undef;
     }
-
-    my $commands = $self->device_attr('exec-command');
-    if( not defined($commands) )
-    {
-        $Gerty::log->error('Missing the required attribute "exec-command" ' .
-                           'for device ' . $self->{'device'}->{'SYSNAME'});
-        return undef;
-    }
     
     my $ret = '';
-    foreach my $cmd (split(/\s*,\s*/o, $commands ))
+    foreach my $cmd (@{$self->{'command_actions'}{$action}})
     {
         $ret .= $self->exec_command( $cmd );
     }
