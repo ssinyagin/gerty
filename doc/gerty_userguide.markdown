@@ -223,15 +223,18 @@ The following example sets different credentials for CPE devices, and a
 couple of "show" commands. Also it specifies explicitly where the results of
 these commands should be stored:
 
-  ; File: /opt/gerty/Company/devclasses/Company.Access.CPE.Cisco870.ini  
-  [devclass Company.Access.CPE.Cisco870]
-    inherit = Gerty.CiscoIOS, Company.IOSActions
-    do.ios.sh-qos = 1
-    ios.sh-qos.path = ${datapath}/output/cpe/qos
-    do.ios.sh-intf = 1
-    ios.sh-intf.path = ${datapath}/output/cpe/interfaces
-    do.config-backup = 1
-    config-backup.path = ${datapath}/output/cpe/config
+    ; File: /opt/gerty/Company/devclasses/Company.Access.CPE.Cisco870.ini  
+    [devclass Company.Access.CPE.Cisco870]
+      inherit = Gerty.CiscoIOS, Company.IOSActions
+      cli.auth-username = gerty
+      cli.auth-password = gertyPW
+      cli.auth-epassword = gertyPW
+      do.ios.sh-qos = 1
+      ios.sh-qos.path = ${datapath}/output/cpe/qos
+      do.ios.sh-intf = 1
+      ios.sh-intf.path = ${datapath}/output/cpe/interfaces
+      do.config-backup = 1
+      config-backup.path = ${datapath}/output/cpe/config
 
 
 ### Job definitions
@@ -295,6 +298,15 @@ Extending Gerty with your own Perl modules
 See the *Gerty Developer Guide* document for more detais (*not written yet*).
 
 
+
+Using Subversion for configuration revision control
+---------------------------------------------------
+
+Need to extend this section. In general, use a Shell script that would 
+do the following commands inside the configurations directory:
+
+    svn add *
+    svn commit -m `date`
 
 
 
