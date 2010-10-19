@@ -203,12 +203,13 @@ simple actions consisting of one or several CLI commands.
 The following example defines a new generic device class and a few useful
 commands for Cisco IOS:
 
-  ; File: /opt/gerty/Company/devclasses/Company.IOSActions.ini  
-  [devclass Company.IOSActions]
-    cli.command-actions = ios.sh-ospfnbr, ios.sh-qos, ios.sh-intf
-    ios.sh-ospfnbr.command = show ip ospf neighbor
-    ios.sh-qos.command = show policy-map interface
-    ios.sh-intf.command = show interface
+    ; File: /opt/gerty/Company/devclasses/Company.IOSActions.ini  
+    [devclass Company.IOSActions]
+      cli.command-actions = ios.sh-ospfnbr, ios.sh-qos, ios.sh-intf
+      ios.sh-ospfnbr.command = show ip ospf neighbor
+      ios.sh-qos.command = show policy-map interface
+      ios.sh-intf.command = show interface
+
 
 
 ### Device classes
@@ -302,7 +303,7 @@ See the *Gerty Developer Guide* document for more detais (*not written yet*).
 Using Subversion for configuration revision control
 ---------------------------------------------------
 
-Need to extend this section. In general, use a Shell script that would 
+*Need to extend this section*. In general, use a Shell script that would 
 do the following commands inside the configurations directory:
 
     svn add *
