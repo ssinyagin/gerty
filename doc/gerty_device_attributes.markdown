@@ -1,4 +1,4 @@
-Gerty Device attributes
+Gerty Device Attributes
 =======================
 
 
@@ -33,7 +33,7 @@ Gerty distribution supplies a number of pre-defined device classes, as follows:
   many Cisco-like interfaces. Vendor-specific modules may inherit and override 
   its values.
 
-* __Gerty.Cisco__: default class for Cisco IOS devices.
+* __Gerty.CiscoIOS__: default class for Cisco IOS devices.
 
 
 

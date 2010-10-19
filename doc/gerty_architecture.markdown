@@ -1,4 +1,4 @@
- software architecture
+Gerty software architecture
 ===========================
 
 Introduction
@@ -85,7 +85,7 @@ Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
     
     [siteconfig]
       ; we use SSH globally everywhere
-      cli.access-method = ssh
+      cli.access-method:default = ssh
 
       ; example of a user-defined variable
       backbone-data = /srv/gerty/backbone
@@ -123,7 +123,7 @@ Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
     [devices juniper-mx-pe]
       description = "Juniper MX series as MPLS PE routers"
 
-      ; example of SQL import
+      ; example of SQL import (not implemented yet)
       source.type = Gerty::DeviceList::DBI
 
       ; Database connection attributes
@@ -148,7 +148,7 @@ Example of a devclass file
       ; properties from generic and Company specific modules
       ; a rule of thumb: generic devclasses define a set of possible actions 
       ; and reports, but particular actions have to be activated here
-      inherit = Gerty.Cisco, Company.Generic
+      inherit = Gerty.CiscoIOS, Company.Generic
 
       ; this tells that we use admin privileges ("enable" in Cisco terminology)
       admin-mode = 1
@@ -164,11 +164,12 @@ Example of a devclass file
       cli.auth-username = gerty
       cli.auth-password = eeDie6louj
 
-      ; enable password is used by "Gerty.Cisco" and only when 
+      ; enable password is used by "Gerty.CiscoIOS" and only when 
       ; admin-mode is true
       cli.auth-epassword = Ieyei5ofej
 
-      ;;; enable the actions (they are defined in modules like "Gerty.Cisco")
+      ;;; enable the actions (they are defined in modules 
+      ;;; like "Gerty.CiscoIOS")
 
       ; "do.config-backup" is a standard action name, implemented differently
       ; for various vendor types. It also requires a number of attributes
@@ -209,7 +210,7 @@ anything in them, and the files would be overwritten by the package installer.
     various functionality modules. Plugins can also add new subcommands and
     options.
 *   `share/gerty/devclasses/` -- the directory with INI files that define
-    predefined device classes, such as `Gerty.Cisco.ini`
+    predefined device classes, such as `Gerty.CiscoIOS.ini`
 *   `share/gerty/plugins` -- the directory where the plugin installers put 
     their configuration files
 
