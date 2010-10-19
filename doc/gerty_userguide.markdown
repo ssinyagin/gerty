@@ -273,14 +273,14 @@ Gerty and see see the results.
 
 First, try it on only one device in verbose mode:
 
-  gerty run /opt/gerty/Company/jobs/cpe_test_01.ini --verbose --limit=cpe001
+    gerty run /opt/gerty/Company/jobs/cpe_test_01.ini --verbose --limit=cpe001
 
 If something goes wrong, replace `--verbose` with `--debug` option and analyze
 the output.
 
 When everything seems right, execute the job for all devices:
 
-  gerty run /opt/gerty/Company/jobs/cpe_test_01.ini
+    gerty run /opt/gerty/Company/jobs/cpe_test_01.ini
 
 For each device and every action, there will be a status file in 
 `/srv/gerty-test/status` directory. For successfully executed actions there 
