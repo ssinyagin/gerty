@@ -59,6 +59,7 @@ http://chilli.nosignal.org/mailman/listinfo/gerty-users
 TO DO
 -----
 
+* additive attributes: "cli.command-actions:add"
 * DBI handler for DeviceList
 * blank out passwords
 * write a user guide
