@@ -161,9 +161,12 @@ sub retrieve_device_attr
     my $dev = shift;
     my $attr = shift;
 
-    $Gerty::log->debug('Retrieving attribute "' . $attr .
-                       '" for device "' . $dev->{'SYSNAME'} . '"');
-
+    if( $Gerty::debug_level >= 2 )
+    {
+        $Gerty::log->debug('Retrieving attribute "' . $attr .
+                           '" for device "' . $dev->{'SYSNAME'} . '"');
+    }
+    
     # First look up at the job level
     my $ret = $self->attr($attr);
     if( defined($ret) )
@@ -199,7 +202,7 @@ sub retrieve_device_attr
         $Gerty::log->debug('Retrieved "' . $attr .
                            '"="' . $ret . '" from devclass level');
     }
-    else
+    elsif( $Gerty::debug_level >= 2 )
     {
         $Gerty::log->debug('"' . $attr . '" is undefined');
     }

@@ -60,6 +60,7 @@ TO DO
 -----
 
 * additive attributes: "cli.command-actions:add"
+* ping-before-telnet
 * DBI handler for DeviceList
 * blank out passwords
 * write a user guide

@@ -113,11 +113,14 @@ sub attr
     my $ret = $self->{'cfg'}{$attr};
     if( defined($ret) )
     {
-        $Gerty::log->debug('Found "' . $attr . '" in devclass "' .
-                           $self->classname() . '"');
+        if( $Gerty::debug_level >= 2 )
+        {
+            $Gerty::log->debug('Found "' . $attr . '" in devclass "' .
+                               $self->classname() . '"');
+        }
         return $ret;
     }
-    else
+    elsif( $Gerty::debug_level >= 2 )
     {
         $Gerty::log->debug('Did not find "' . $attr . '" in devclass "' .
                            $self->classname() .
@@ -131,7 +134,7 @@ sub attr
         {
             return $ret;
         }
-        else
+        elsif( $Gerty::debug_level >= 2 )
         {
             $Gerty::log->debug('Did not find "' . $attr . '" in devclass "' .
                                $parent->classname() .
