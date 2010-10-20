@@ -22,8 +22,10 @@ use strict;
 use warnings;
 use Expect qw(exp_continue);
 
+# register additive attributes
+$Gerty::Job::additive_attribute{'cli.command-actions'} = 1;
 
-     
+
 sub new
 {
     my $class = shift;

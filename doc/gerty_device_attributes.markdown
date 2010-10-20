@@ -21,7 +21,9 @@ The attribute values are derived in a hierarchical manner, as follows:
 7. If the value is not found during previous steps, they are repeated 
    by adding `:default` suffix to the attribute name. This allows 
    setting more specfic values to device lists or classes.
-
+8. If the attribute is additive, a new search is done through the whole 
+   hierarchy after adding `:add` to the attribute name, and all found values
+   are added into a comma-separated list.
 
 Gerty distribution supplies a number of pre-defined device classes, as follows:
 
@@ -170,7 +172,7 @@ inherited by other handlers, such as *Gerty::CLIHandler::CiscoLike*.
 
 Optional parameters:
 
-* __cli.command-actions__: comma-separated list of new action names.
+* __cli.command-actions__ (additive): comma-separated list of new action names.
   Each action (XXX) must be accompanied by a corresponding __XXX.command__ or
   __XXX.command-N__
 

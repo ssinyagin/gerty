@@ -27,6 +27,9 @@ use Gerty::SiteConfig;
 use Gerty::DeviceClass;
 
 
+# attribute names which can be additive must be listed here
+our %additive_attribute;
+
 sub new
 {
     my $self = {};
@@ -210,6 +213,73 @@ sub retrieve_device_attr
 }
 
 
+sub retrieve_additive_attr
+{
+    my $self = shift;
+    my $dev = shift;
+    my $attr = shift;
+    my $value = shift;
+
+    $attr .= ':add';
+    my @values;
+    if( defined($value) )
+    {
+        push(@values, $value);
+    }
+    
+    if( $Gerty::debug_level >= 2 )
+    {
+        $Gerty::log->debug('Retrieving additive values for attribute "' .
+                           $attr . '" for device "' . $dev->{'SYSNAME'} . '"');
+    }
+    
+    # First look up at the job level
+    my $v = $self->attr($attr);
+    if( defined($v) )
+    {
+        $Gerty::log->debug('Found "' . $attr .
+                           '"="' . $v . '" at the job level');
+        push(@values, $v);
+    }
+
+    # Look up in [siteconfig]
+    $v = $self->{'siteconfig'}->attr($attr);
+    if( defined($v) )
+    {
+        $Gerty::log->debug('Found "' . $attr .
+                           '"="' . $v . '" at siteconfig level');
+        push(@values, $v);
+    }
+
+    # Look up in device list
+    my $listname = $dev->{'DEVLIST'};
+    $v = $self->{'devlists'}{$listname}->attr($attr);
+    if( defined($v) )
+    {
+        $Gerty::log->debug('Found "' . $attr .
+                           '"="' . $v . '" in device list');
+        push(@values, $v);
+    }
+    
+    # Look up in the class hierarchy
+    $v = $self->{'devclasses'}{$dev->{'DEVCLASS'}}->additive_attr($attr);
+    if( defined($v) )
+    {
+        push(@values, $v);
+    }
+
+    if( scalar(@values) )
+    {
+        return join(',', @values);
+    }
+    else
+    {
+        return undef;
+    }
+}
+
+
+
 # retrieve the attribute and do variable substitution
 sub device_attr
 {
@@ -222,6 +292,16 @@ sub device_attr
     {
         $value = $self->retrieve_device_attr($dev, $attr . ':default');
     }
+
+    if( $additive_attribute{$attr} )
+    {
+        $value = $self->retrieve_additive_attr($dev, $attr, $value);
+        # remove extra space
+        $value =~ s/\s*,\s*/,/go;
+        $Gerty::log->debug('Additive attribute value: "' . $attr .
+                           '"="' . $value . '"');
+    }
+    
     return undef unless defined($value);
 
     while( $value =~ /\$\{([^\}]+)\}/o )

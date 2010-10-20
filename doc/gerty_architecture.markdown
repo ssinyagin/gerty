@@ -62,6 +62,9 @@ level, are looked up in a hierarchical fashion:
 7. If the value is not found during previous steps, they are repeated 
    by adding `:default` suffix to the attribute name. This allows setting
    more specfic values to device lists or classes.
+8. If the attribute is additive, a new search is done through the whole 
+   hierarchy after adding `:add` to the attribute name, and all found values
+   are added into a comma-separated list.
 
 
 Example of a job file (**/opt/gerty/Company/jobs/backbone.job.ini**):

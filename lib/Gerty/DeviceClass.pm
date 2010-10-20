@@ -147,6 +147,44 @@ sub attr
 
 
 
+sub additive_attr
+{
+    my $self = shift;
+    my $attr = shift;
+
+    my @values;
+
+    my $v = $self->{'cfg'}{$attr};
+    if( defined($v) )
+    {
+        $Gerty::log->debug('Found "' . $attr .
+                           '"="' . $v . '" in device class ' .
+                           $self->classname());
+        
+        push(@values, $v);
+    }
+    
+    
+    foreach my $parent (reverse @{$self->{'parents'}})
+    {
+        $v = $parent->additive_attr( $attr );
+        if( defined($v) )
+        {            
+            push(@values, $v);
+        }
+    }
+    
+    if( scalar(@values) )
+    {
+        return join(',', @values);
+    }
+    else
+    {
+        return undef;
+    }
+}
+
+    
 
 
 1;
