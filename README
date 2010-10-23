@@ -59,6 +59,7 @@ http://chilli.nosignal.org/mailman/listinfo/gerty-users
 TO DO
 -----
 
+* re-think CLI handler modules
 * ping-before-telnet
 * DBI handler for DeviceList
 * blank out passwords
