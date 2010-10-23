@@ -6,7 +6,15 @@ Introduction
 ------------
 
 Each device processed by Gerty is assigned a number of attributes.
-The attribute values are derived in a hierarchical manner, as follows:
+
+There are two types of device attributes in GertyA: additive and normal.
+
+Names of additive attributes start with the plus sign (+). Their values are 
+comma-separated lists, and these lists are additively comprised of values 
+found on all hierarchy levels: in the class hierarchy, device list, 
+siteconfig, and at the job level.
+
+Values of normal attributes are derived in a hierarchical manner, as follows:
 
 1. Device classes define the default values.
 2. Child device classes may override parents' attributes.
@@ -21,9 +29,6 @@ The attribute values are derived in a hierarchical manner, as follows:
 7. If the value is not found during previous steps, they are repeated 
    by adding `:default` suffix to the attribute name. This allows 
    setting more specfic values to device lists or classes.
-8. If the attribute is additive, a new search is done through the whole 
-   hierarchy after adding `:add` to the attribute name, and all found values
-   are added into a comma-separated list.
 
 Gerty distribution supplies a number of pre-defined device classes, as follows:
 
@@ -172,9 +177,9 @@ inherited by other handlers, such as *Gerty::CLIHandler::CiscoLike*.
 
 Optional parameters:
 
-* __cli.command-actions__ (additive): comma-separated list of new action names.
-  Each action (XXX) must be accompanied by a corresponding __XXX.command__ or
-  __XXX.command-N__
+* __+cli.command-actions__ (additive): comma-separated list of new action 
+  names. Each action (XXX) must be accompanied by a corresponding 
+  __XXX.command__ or __XXX.command-N__
 
 * __XXX.multicommand__: if set to a nonzero integer, defines the number of 
   subsequent commands that comprise the action. Each command must be defined 

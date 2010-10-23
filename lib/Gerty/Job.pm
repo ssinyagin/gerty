@@ -27,8 +27,6 @@ use Gerty::SiteConfig;
 use Gerty::DeviceClass;
 
 
-# attribute names which can be additive must be listed here
-our %additive_attribute;
 
 sub new
 {
@@ -218,14 +216,8 @@ sub retrieve_additive_attr
     my $self = shift;
     my $dev = shift;
     my $attr = shift;
-    my $value = shift;
 
-    $attr .= ':add';
     my @values;
-    if( defined($value) )
-    {
-        push(@values, $value);
-    }
     
     if( $Gerty::debug_level >= 2 )
     {
@@ -270,7 +262,12 @@ sub retrieve_additive_attr
 
     if( scalar(@values) )
     {
-        return join(',', @values);
+        my $ret = join(',', @values);
+        # remove extra space
+        $ret =~ s/\s*,\s*/,/go;
+        $Gerty::log->debug('Additive attribute value: "' . $attr .
+                           '"="' . $ret . '"');
+        return $ret;
     }
     else
     {
@@ -287,23 +284,25 @@ sub device_attr
     my $dev = shift;
     my $attr = shift;
 
-    my $value = $self->retrieve_device_attr($dev, $attr);
-    if( not defined($value) )
+    my $value;
+    
+    # additive attributes start with '+'
+    if( $attr =~ /^\+/o )
     {
-        $value = $self->retrieve_device_attr($dev, $attr . ':default');
+        $value = $self->retrieve_additive_attr($dev, $attr);
     }
-
-    if( $additive_attribute{$attr} )
+    else
     {
-        $value = $self->retrieve_additive_attr($dev, $attr, $value);
-        # remove extra space
-        $value =~ s/\s*,\s*/,/go;
-        $Gerty::log->debug('Additive attribute value: "' . $attr .
-                           '"="' . $value . '"');
+        $value = $self->retrieve_device_attr($dev, $attr);
+        if( not defined($value) )
+        {
+            $value = $self->retrieve_device_attr($dev, $attr . ':default');
+        }
     }
     
     return undef unless defined($value);
 
+    # perform ${variable} substitution    
     while( $value =~ /\$\{([^\}]+)\}/o )
     {
         my $lookup = $1;

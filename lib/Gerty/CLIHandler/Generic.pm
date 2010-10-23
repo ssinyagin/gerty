@@ -22,9 +22,6 @@ use strict;
 use warnings;
 use Expect qw(exp_continue);
 
-# register additive attributes
-$Gerty::Job::additive_attribute{'cli.command-actions'} = 1;
-
 
 sub new
 {
@@ -58,7 +55,7 @@ sub new
 
     foreach my $attr
         ( 'admin-mode', 'cli.timeout', 'cli.user-prompt', 'cli.admin-prompt',
-          'cli.comment-string', 'cli.command-actions', 'cli.error-regexp' )
+          'cli.comment-string', '+cli.command-actions', 'cli.error-regexp' )
     {
         $self->{$attr} = $self->device_attr($attr);
     }
@@ -66,9 +63,9 @@ sub new
     $self->{'prompt'} = $self->{'cli.user-prompt'};
 
     $self->{'command_actions'} = {};
-    if( defined( $self->{'cli.command-actions'} ) )        
+    if( defined( $self->{'+cli.command-actions'} ) )        
     {
-        foreach my $action (split(/\s*,\s*/o, $self->{'cli.command-actions'}))
+        foreach my $action (split(/,/o, $self->{'+cli.command-actions'}))
         {
             my $multicmd = $self->device_attr($action . '.multicommand');
 
@@ -93,11 +90,11 @@ sub new
                 if( not defined($cmd) )
                 {
                     $Gerty::log->error
-                        ('cli.command-actions defines the action "' .
+                        ('+cli.command-actions defines the action "' .
                          $action . '", but attribute "' . $attr .
                          '" is not defined for device: ' .
                          $self->{'device'}->{'SYSNAME'});
-                    return undef;
+                    next;
                 }
                 push( @{$self->{'command_actions'}{$action}}, $cmd );
             }            

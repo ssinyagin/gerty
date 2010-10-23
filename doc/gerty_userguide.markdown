@@ -205,7 +205,7 @@ commands for Cisco IOS:
 
     ; File: /opt/gerty/Company/devclasses/Company.IOSActions.ini  
     [devclass Company.IOSActions]
-      cli.command-actions:add = ios.sh-ospfnbr, ios.sh-qos, ios.sh-intf
+      +cli.command-actions = ios.sh-ospfnbr, ios.sh-qos, ios.sh-intf
       ios.sh-ospfnbr.command = show ip ospf neighbor
       ios.sh-qos.command = show policy-map interface
       ios.sh-intf.command = show interface
