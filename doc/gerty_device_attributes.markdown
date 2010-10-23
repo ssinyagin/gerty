@@ -184,6 +184,10 @@ Optional parameters:
 * __XXX.multicommand__: if set to a nonzero integer, defines the number of 
   subsequent commands that comprise the action. Each command must be defined 
   in __XXX.command-N__ attribute.
+
+* __+cli.handler-mixins__ (additive): comma-separated list of Perl modules
+  that define additional actions and their handlers. 
+  See the *Gerty Developer Guide* document for more detais.
   
 * __cli.error-regexp__: regular expression that identifies an error message in
    the command output. *Gerty.CiscoLike.ini* defines it as `^\%`

@@ -23,6 +23,10 @@ use warnings;
 use Expect qw(exp_continue);
 
 
+# In case of initialization errors, print errors, but try not to
+# abort the job execution. The CLI session is already initialized, so
+# try to get the best of it
+
 sub new
 {
     my $class = shift;
@@ -55,7 +59,8 @@ sub new
 
     foreach my $attr
         ( 'admin-mode', 'cli.timeout', 'cli.user-prompt', 'cli.admin-prompt',
-          'cli.comment-string', '+cli.command-actions', 'cli.error-regexp' )
+          'cli.comment-string', '+cli.command-actions', 'cli.error-regexp',
+          '+cli.handler-mixins')
     {
         $self->{$attr} = $self->device_attr($attr);
     }
@@ -82,8 +87,7 @@ sub new
                 push( @attrs, $action . '.command' );
             }
 
-            $self->{'command_actions'}{$action} = [];
-            
+            my $commands = [];            
             foreach my $attr (@attrs)
             {
                 my $cmd = $self->device_attr($attr);
@@ -96,11 +100,93 @@ sub new
                          $self->{'device'}->{'SYSNAME'});
                     next;
                 }
-                push( @{$self->{'command_actions'}{$action}}, $cmd );
-            }            
-        }                
+                
+                push( @{$commands}, $cmd );
+                
+                if( $Gerty::debug_level >= 2 )
+                {
+                    $Gerty::log->debug
+                        ($self->{'device'}->{'SYSNAME'} . ': ' .
+                         'registered command "' . $cmd . '" for action "' .
+                         $action . '"');
+                }
+            }
+
+            if( scalar(@{$commands}) )
+            {
+                $self->{'command_actions'}{$action} = $commands;
+                $Gerty::log->debug
+                    ($self->{'device'}->{'SYSNAME'} . ': ' .
+                     'registered CLI action "' . $action . '"');
+            }
+        }            
     }
 
+    # initialize mix-in modules
+    $self->{'mixin_actions'} = {};
+    $self->{'mixin_origin'} = {};    
+    if( defined( $self->{'+cli.handler-mixins'} ) )        
+    {
+        foreach my $module (split(/,/o, $self->{'+cli.handler-mixins'}))
+        {
+            eval(sprintf('require %s', $module));
+            if( $@ )
+            {
+                $Gerty::log->error
+                    ('Error loading Perl module ' . $module .
+                     ' specified in "+cli.handler-mixins" for device "' .
+                     $self->{'device'}->{'SYSNAME'} . '": ' . $@);
+                next;
+            }
+
+            my $var = "\$" . $module . '::action_handlers';
+            my $handlers = eval($var);
+            if( $@ )
+            {
+                $Gerty::log->error
+                    ('Error accessing ' . $var . ' : ' . $@);
+                next;
+            }
+
+            if( not defined($handlers) )
+            {
+                $Gerty::log->error
+                    ($var . ' is not defined in mix-in module ' . $module);
+                next;
+            }
+
+            $Gerty::log->debug
+                ($self->{'device'}->{'SYSNAME'} . ': ' .
+                 'loaded mix-in module "' . $module . '"');
+            
+            while( my($action, $sub) = each %{$handlers} )
+            {
+                if( defined($self->{'command_actions'}{$action}) )
+                {
+                    $Gerty::log->error
+                        ('Action ' . $action . ' is defined in mix-in ' .
+                         $module . ' and in "+cli.command-actions"');
+                }
+                elsif( defined( $self->{'mixin_actions'}{$action} ) )
+                {
+                    $Gerty::log->error
+                        ('Action ' . $action . ' is defined in two mix-in ' .
+                         'modules: ' . $module . ' and ' .
+                         $self->{'mixin_origin'}{$action});
+                }
+                else
+                {
+                    $self->{'mixin_actions'}{$action} = $sub;
+                    $self->{'mixin_origin'}{$action} = $module;
+                    $Gerty::log->debug
+                        ($self->{'device'}->{'SYSNAME'} . ': ' .
+                         'registered CLI action "' . $action .
+                         '" from mix-in "' . $module . '"');
+                }                
+            }
+        }
+    }
+    
     return $self;
 }
 
@@ -185,7 +271,11 @@ sub exec_command
 sub supported_actions
 {
     my $self = shift;
-    return [ keys %{$self->{'command_actions'}} ];
+
+    my $ret = [];
+    push( @{$ret}, keys %{$self->{'command_actions'}} );
+    push( @{$ret}, keys %{$self->{'mixin_actions'}} );
+    return $ret;
 }
 
 
@@ -195,6 +285,11 @@ sub do_action
     my $self = shift;    
     my $action = shift;
 
+    if( defined($self->{'mixin_actions'}{$action}) )
+    {
+        return &{$self->{'mixin_actions'}{$action}}($self, $action);
+    }
+    
     if( not defined($self->{'command_actions'}{$action}) )
     {
         my $err = 'Unsupported action: ' . $action .
