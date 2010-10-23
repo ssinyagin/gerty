@@ -47,25 +47,8 @@ Some attributes belong to their specific area. For example, the *devlists*
 attribute is only used in the *[job]* section in the job definition file.
 
 Device attributes, those which define the Gerty's behavior at the device 
-level, are looked up in a hierarchical fashion: 
-
-1. Device classes define the default values.
-2. Child device classes may override parents' attributes.
-3. If a child inherits from several parents, subsequent parents may 
-   override previous parents's attributes.
-4. The device list (*[devices XXX]* in *siteconfig.ini*) may override 
-   attributes defined in device classes.
-5. The *[siteconfig]* section in *siteconfig.ini* may override attributes 
-   defined in device lists.
-6. The *[job]* section in Job definition file may override attributes defined 
-   at the siteconfig level.
-7. If the value is not found during previous steps, they are repeated 
-   by adding `:default` suffix to the attribute name. This allows setting
-   more specfic values to device lists or classes.
-8. If the attribute is additive, a new search is done through the whole 
-   hierarchy after adding `:add` to the attribute name, and all found values
-   are added into a comma-separated list.
-
+level, are looked up in a hierarchical fashion, from the top parent class to 
+the job leve. See *Gerty Device Attributes* document for details.
 
 Example of a job file (**/opt/gerty/Company/jobs/backbone.job.ini**):
 
