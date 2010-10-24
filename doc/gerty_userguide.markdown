@@ -262,10 +262,9 @@ Also it specifies an alternative path for output:
       devlists = access.cpe.cisco
       datapath = /srv/gerty-test
     
-      ; (not implemented yet) load Perl module: 
       ; /opt/gerty/Company/lib/Company/CPEInteractiveDiagnostics.pm
       ; this module would define a new action, "company.intrdiags"
-      cli.extra-handlers = Company::CPEInteractiveDiagnostics
+      +cli.handler-mixins = Company::CPEInteractiveDiagnostics
       do.company.intrdiags = 1
       company.intrdiags.path =  ${datapath}/output/cpe/diag
 
