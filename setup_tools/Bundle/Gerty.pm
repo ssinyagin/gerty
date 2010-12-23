@@ -31,9 +31,6 @@ Bundle::Gerty - A bundle to install Gerty pre-requisite modules
 
 C<perl -I `pwd`/setup_tools -MCPAN -e 'install Bundle::Gerty'>
 
-or
-
-C<perl -I `pwd`/setup_tools -MCPANPLUS -e 'install Bundle::Gerty'>
 
 =head1 CONTENTS
 
