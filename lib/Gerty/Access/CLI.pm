@@ -94,7 +94,7 @@ sub new
     # Fetch other attributes
 
     foreach my $attr
-        ('cli.ssh-port', 'cli.telnet-port', 'cli.log-dir', 
+        ('cli.ssh-port', 'cli.telnet-port', 'cli.log-dir', 'cli.log-enabled',
          'cli.logfile-timeformat', 'cli.timeout', 'cli.initial-prompt')
     {
         my $val = $self->device_attr($attr);
@@ -224,30 +224,36 @@ sub _open_expect
     {
         $exp->log_stdout(0);
     }
-    
-    my $logdir = $self->{'attr'}{'cli.log-dir'};
-    if( length($logdir) > 0 )
+
+    if( $self->{'attr'}{'cli.log-enabled'} )
     {
-        if( not -d $logdir )
+        
+        my $logdir = $self->{'attr'}{'cli.log-dir'};
+        if( length($logdir) > 0 )
         {
-            $Gerty::log->warning
-                ('The directory ' . $logdir . ' is specified as cli.log-dir ' .
-                 ' for ' . $self->sysname . ' does not exist ');
+            if( not -d $logdir )
+            {
+                $Gerty::log->warning
+                    ('The directory ' . $logdir .
+                     ' is specified as cli.log-dir ' .
+                     ' for ' . $self->sysname . ' does not exist ');
+            }
+            else
+            {
+                $exp->log_file
+                    (sprintf
+                     ('%s/%s.%s.log',
+                      $logdir, $self->sysname,
+                      time2str($self->{'attr'}{'cli.logfile-timeformat'},
+                               time())));
+            }
         }
         else
         {
-            $exp->log_file
-                (sprintf('%s/%s.%s.log',
-                         $logdir, $self->sysname,
-                         time2str($self->{'attr'}{'cli.logfile-timeformat'},
-                                  time())));
+            $Gerty::log->info
+                ('cli.log-dir is not specified for ' . $self->sysname .
+                 ', CLI logging is disabled');
         }
-    }
-    else
-    {
-        $Gerty::log->info
-            ('cli.log-dir is not specified for ' . $self->sysname .
-             ', CLI logging is disabled');
     }
 
     return $exp;

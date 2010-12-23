@@ -131,6 +131,8 @@ Optional attributes:
 
 * __cli.log-dir__: directory where a copy of all CLI output is saved.
 
+* __cli.log-enabled__: if set to true value, CLI output loging is enabled.
+
 * __cli.logfile-timeformat__: (mandatory if *cli.log-dir* is defined) 
   *strftime*-formatted suffix which is added to the output file.
   
