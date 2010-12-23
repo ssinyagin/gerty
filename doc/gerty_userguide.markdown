@@ -73,7 +73,7 @@ Gerty is different:
 
 
 
-Organising Siteconfig
+Organizing Siteconfig
 ---------------------
 
 ### Planning the site
