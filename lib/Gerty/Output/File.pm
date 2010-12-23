@@ -18,6 +18,8 @@
 
 package Gerty::Output::File;
 
+use base qw(Gerty::Handler);
+
 use strict;
 use warnings;
 use IO::File;
@@ -28,20 +30,8 @@ sub new
 {
     my $class = shift;
     my $options = shift;
-    my $self = {};
-    bless $self, $class;
-    
-    foreach my $opt ('job', 'device')
-    {
-        if( not defined( $options->{$opt} ) )
-        {
-            $Gerty::log->critical($class . '::new - missing ' . $opt);
-            return undef;
-        }
-    }
-
-    $self->{'device'} = $options->{'device'};
-    $self->{'job'} = $options->{'job'};
+    my $self = $class->SUPER::new( $options );    
+    return undef unless defined($self);
 
     # Fetch mandatory attributes
     
@@ -54,7 +44,7 @@ sub new
         {
             $Gerty::log->error('Missing mandatory attribute "' . $attr .
                                '" for device: ' .
-                               $self->{'device'}->{'SYSNAME'});
+                               $self->sysname);
             return undef;
         }
 
@@ -66,7 +56,7 @@ sub new
         $Gerty::log->critical
             ('No such directory: "' . $self->{'output.default-path'} .
              '" specified in output.default-path ' .
-             ' for device ' . $self->{'device'}->{'SYSNAME'});
+             ' for device ' . $self->sysname);
         return undef;
     }
 
@@ -89,7 +79,7 @@ sub new
                 ('No such directory: "' .
                  $self->{'output.default-status-path'} .
                  '" specified in output.default-status-path ' .
-                 ' for device ' . $self->{'device'}->{'SYSNAME'});
+                 ' for device ' . $self->sysname);
             return undef;
         }
     }
@@ -106,13 +96,6 @@ sub new
 
 
 
-sub device_attr
-{
-    my $self = shift;
-    my $attr = shift;
-
-    return $self->{'job'}->device_attr($self->{'device'}, $attr);
-}
 
 
 sub check_action_attributes
@@ -131,7 +114,7 @@ sub check_action_attributes
             $Gerty::log->critical
                 ('No such directory: "' . $path .
                  '" specified in ' . $action . '.path' .
-                 ' for device ' . $self->{'device'}->{'SYSNAME'});
+                 ' for device ' . $self->sysname);
             return undef;
         }
     }
@@ -153,7 +136,7 @@ sub check_action_attributes
             $Gerty::log->critical
                 ('No such directory: "' . $path .
                  '" specified in ' . $action . '.status-path' .
-                 ' for device ' . $self->{'device'}->{'SYSNAME'});
+                 ' for device ' . $self->sysname);
             return undef;
         }
     }
@@ -179,7 +162,7 @@ sub prepare_for_action
 
     $self->{'status_fname_prefix'} =
         $self->{'action_statuspath'}{$action} . '/' .
-        $self->{'device'}->{'SYSNAME'} . '.' . $action . '.';
+        $self->sysname . '.' . $action . '.';
     
     my @unlink_files =
         ($self->{'status_fname_prefix'} . $self->{'output.failure-suffix'},
@@ -187,7 +170,7 @@ sub prepare_for_action
     
     $self->{'output_fname'} =
         $self->{'action_outpath'}{$action} . '/' .
-        $self->{'device'}->{'SYSNAME'} . '.' . $action;
+        $self->sysname . '.' . $action;
     
     if( $self->{'output.delete-on-failure'} )
     {

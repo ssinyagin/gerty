@@ -33,8 +33,6 @@ sub new
     my $self = $class->SUPER::new( $options );    
     return undef unless defined($self);
     
-    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
-
     # Fetch mandatory attributes
 
     foreach my $attr
@@ -46,7 +44,7 @@ sub new
         {
             $Gerty::log->error
                 ('Missing mandatory attribute "' . $attr . '" for device: ' .
-                 $sysname);
+                 $self->sysname);
             return undef;
         }
         else
@@ -65,7 +63,7 @@ sub new
             $Gerty::log->error
                 ('Missing mandatory credentials attribute "' .
                  $attr . '" for device: ' .
-                 $sysname);
+                 $self->sysname);
             return undef;
         }
         else
@@ -88,7 +86,6 @@ sub connect
 
     my $exp = $self->_open_expect();
     
-    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
     my $proxyhost = $self->{'attr'}{'sshproxy.hostname'};
     
     $Gerty::log->debug('Connecting to SSH proxy: ' . $proxyhost);
@@ -134,7 +131,7 @@ sub connect
     }    
     
     my $method = $self->{'attr'}{'cli.access-method'};            
-    my $ipaddr = $self->{'options'}->{'device'}{'ADDRESS'};
+    my $ipaddr = $self->device->{'ADDRESS'};
     
     $Gerty::log->debug('Connecting through SSH proxy to ' .
                        $ipaddr . ' with ' . $method);

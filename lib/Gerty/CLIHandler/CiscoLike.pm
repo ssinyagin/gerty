@@ -37,8 +37,6 @@ sub new
     my $self = $class->SUPER::new( $options );    
     return undef unless defined($self);
 
-    my $sysname = $self->{'device'}->{'SYSNAME'};
-
     my $admin_already = $self->check_admin_mode();
     if( $admin_already )
     {
@@ -48,7 +46,7 @@ sub new
     if( not $self->init_terminal() )
     {
         $Gerty::log->error
-            ('Failed to initialize terminal for ' . $sysname);
+            ('Failed to initialize terminal for ' . $self->sysname);
         return undef;
     }
     
@@ -59,14 +57,15 @@ sub new
         if( not defined( $epasswd ) )
         {
             $Gerty::log->error
-                ('Missing attribute "cli.auth-epassword" for ' . $sysname);
+                ('Missing attribute "cli.auth-epassword" for ' .
+                 $self->sysname);
             return undef;
         }
         
         if( not $self->set_admin_mode( $epasswd ) )
         {
             $Gerty::log->error
-                ('Failed to switch into enable mode for ' . $sysname);
+                ('Failed to switch into enable mode for ' . $self->sysname);
             return undef;
         }
 
@@ -117,7 +116,7 @@ sub init_terminal
             $Gerty::log->error('"cli.init-terminal" lists ' . $item .
                                ', but the attribute ' .
                                $item . '.command is not defined for device ' .
-                               $self->{'device'}->{'SYSNAME'});
+                               $self->sysname);
             return undef;
         }
     }
@@ -144,11 +143,10 @@ sub set_admin_mode
     my $epasswd = shift;
 
     my $exp = $self->{'expect'};
-    my $sysname = $self->{'device'}->{'SYSNAME'};
     my $enablecmd = $self->device_attr('cli.admin-mode.command');
     my $failure;
 
-    $Gerty::log->debug('Setting admin mode for ' . $sysname);
+    $Gerty::log->debug('Setting admin mode for ' . $self->sysname);
 
     $exp->send($enablecmd . "\r");    
     my $result = $exp->expect
@@ -165,7 +163,7 @@ sub set_admin_mode
     {
         $Gerty::log->error
             ('Could not match the output for ' .
-             $sysname . ': ' . $exp->before());            
+             $self->sysname . ': ' . $exp->before());            
         return undef;
     }
     
@@ -173,7 +171,7 @@ sub set_admin_mode
     {
         $Gerty::log->error
             ('Failed switching to admin mode for ' .
-             $sysname . ': ' . $failure);
+             $self->sysname . ': ' . $failure);
         return undef;
     }
 
@@ -219,7 +217,7 @@ sub config_backup
     if( not defined($cmd) )
     {
         my $err = 'Missing parameter config-backup.command for ' .
-            $self->{'device'}->{'SYSNAME'};
+            $self->sysname;
         $Gerty::log->error($err);
         return {'success' => 0, 'content' => $err};
     }
@@ -242,7 +240,7 @@ sub config_backup
                     my $err = 'config-backup.exclude points to ' .
                         $pattern_name . ', but parameter ' . $pattern_name .
                         '.regexp is not defined for ' .
-                        $self->{'device'}->{'SYSNAME'};                    
+                        $self->sysname;                    
                     $Gerty::log->error($err);
                     return {'success' => 0, 'content' => $err};
                 }

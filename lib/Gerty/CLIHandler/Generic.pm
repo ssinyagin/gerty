@@ -18,6 +18,8 @@
 
 package Gerty::CLIHandler::Generic;
 
+use base qw(Gerty::Handler);
+
 use strict;
 use warnings;
 use Expect qw(exp_continue);
@@ -31,26 +33,15 @@ sub new
 {
     my $class = shift;
     my $options = shift;
-    my $self = {};
-    bless $self, $class;
-    
-    foreach my $opt ('job', 'device')
-    {
-        if( not defined( $options->{$opt} ) )
-        {
-            $Gerty::log->critical($class . '::new - missing ' . $opt);
-            return undef;
-        }
-    }
+    my $self = $class->SUPER::new( $options );    
+    return undef unless defined($self);
 
-    $self->{'device'} = $options->{'device'};
-    $self->{'job'} = $options->{'job'};
-    my $acc = $self->{'device'}->{'ACCESS_HANDLER'};
+    my $acc = $self->device->{'ACCESS_HANDLER'};
     if( not $acc->has('expect') )
     {
         $Gerty::log->critical
             ('The access handler for device "' .
-             $self->{'device'}->{'SYSNAME'} .
+             $self->sysname .
              '" does not provide "expect" method');
         return undef;
     }
@@ -97,7 +88,7 @@ sub new
                         ('+cli.command-actions defines the action "' .
                          $action . '", but attribute "' . $attr .
                          '" is not defined for device: ' .
-                         $self->{'device'}->{'SYSNAME'});
+                         $self->sysname);
                     next;
                 }
                 
@@ -106,7 +97,7 @@ sub new
                 if( $Gerty::debug_level >= 2 )
                 {
                     $Gerty::log->debug
-                        ($self->{'device'}->{'SYSNAME'} . ': ' .
+                        ($self->sysname . ': ' .
                          'registered command "' . $cmd . '" for action "' .
                          $action . '"');
                 }
@@ -116,7 +107,7 @@ sub new
             {
                 $self->{'command_actions'}{$action} = $commands;
                 $Gerty::log->debug
-                    ($self->{'device'}->{'SYSNAME'} . ': ' .
+                    ($self->sysname . ': ' .
                      'registered CLI action "' . $action . '"');
             }
         }            
@@ -135,7 +126,7 @@ sub new
                 $Gerty::log->error
                     ('Error loading Perl module ' . $module .
                      ' specified in "+cli.handler-mixins" for device "' .
-                     $self->{'device'}->{'SYSNAME'} . '": ' . $@);
+                     $self->sysname . '": ' . $@);
                 next;
             }
 
@@ -156,7 +147,7 @@ sub new
             }
 
             $Gerty::log->debug
-                ($self->{'device'}->{'SYSNAME'} . ': ' .
+                ($self->sysname . ': ' .
                  'loaded mix-in module "' . $module . '"');
             
             while( my($action, $sub) = each %{$handlers} )
@@ -179,7 +170,7 @@ sub new
                     $self->{'mixin_actions'}{$action} = $sub;
                     $self->{'mixin_origin'}{$action} = $module;
                     $Gerty::log->debug
-                        ($self->{'device'}->{'SYSNAME'} . ': ' .
+                        ($self->sysname . ': ' .
                          'registered CLI action "' . $action .
                          '" from mix-in "' . $module . '"');
                 }                
@@ -192,14 +183,6 @@ sub new
 
 
 
-sub device_attr
-{
-    my $self = shift;
-    my $attr = shift;
-
-    return $self->{'job'}->device_attr($self->{'device'}, $attr);
-}
-
 
 
 sub exec_command
@@ -208,11 +191,10 @@ sub exec_command
     my $cmd = shift;
 
     my $exp = $self->{'expect'};
-    my $sysname = $self->{'device'}->{'SYSNAME'};
     my $failure;
 
     $Gerty::log->debug('Running a command: "' . $cmd . '" on "' .
-                       $sysname . '"');
+                       $self->sysname . '"');
     
     $exp->send($cmd . "\r");    
     my $result = $exp->expect
@@ -224,7 +206,7 @@ sub exec_command
     if( not $result )
     {
         my $err = 'Could not match the output for ' .
-            $sysname . ': ' . $exp->before();
+            $self->sysname . ': ' . $exp->before();
         
         $Gerty::log->error($err);            
         return {'success' => 0, 'content' => $err};
@@ -233,7 +215,7 @@ sub exec_command
     if( defined($failure) )
     {
         my $err = 'Failed executing "' . $cmd . '" for ' .
-            $sysname . ': ' . $failure;
+            $self->sysname . ': ' . $failure;
         
         $Gerty::log->error($err);
         return {'success' => 0, 'content' => $err};
@@ -256,7 +238,7 @@ sub exec_command
             if( $line =~ $self->{'cli.error-regexp'} )
             {
                 my $err = 'Command "' . $cmd . '" failed on device "' .
-                    $sysname . '": ' . $line;
+                    $self->sysname . '": ' . $line;
                 $Gerty::log->error($err);
                 return {'success' => 0, 'content' => $err};
             }

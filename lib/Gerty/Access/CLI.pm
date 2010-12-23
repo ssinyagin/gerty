@@ -18,6 +18,8 @@
 
 package Gerty::Access::CLI;
 
+use base qw(Gerty::Handler);
+
 use strict;
 use warnings;
 use Expect qw(exp_continue);
@@ -36,21 +38,11 @@ my %known_access_methods =
      
 sub new
 {
-    my $self = {};
-    my $class = shift;    
-    $self->{'options'} = shift;
-    bless $self, $class;
-
-    foreach my $opt ('job', 'device')
-    {
-        if( not defined( $self->{'options'}->{$opt} ) )
-        {
-            $Gerty::log->critical('Gerty::Access::CLI::new: Missing ' . $opt);
-            return undef;
-        }
-    }
-
-    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
+    my $class = shift;
+    my $options = shift;
+    my $self = $class->SUPER::new( $options );    
+    return undef unless defined($self);
+    
 
     # Fetch mandatory attributes
 
@@ -61,7 +53,7 @@ sub new
         {
             $Gerty::log->error
                 ('Missing mandatory attribute "' . $attr . '" for device: ' .
-                 $sysname);
+                 $self->sysname);
             return undef;
         }
         else
@@ -75,7 +67,7 @@ sub new
         $Gerty::log->error
             ('Unsupported cli.access-method value: "' .
              $self->{'attr'}{'cli.access-method'} . '" for device: ' .
-             $sysname);
+             $self->sysname);
         return undef;
     }
     
@@ -90,7 +82,7 @@ sub new
             $Gerty::log->error
                 ('Missing mandatory credentials attribute "' .
                  $attr . '" for device: ' .
-                 $sysname);
+                 $self->sysname);
             return undef;
         }
         else
@@ -110,7 +102,7 @@ sub new
         {
             $Gerty::log->error
                 ('Missing mandatory attribute "' .
-                 $attr . '" for device: ' . $sysname);
+                 $attr . '" for device: ' . $self->sysname);
             return undef;
         }
         $self->{'attr'}{$attr} = $val;        
@@ -140,25 +132,6 @@ sub has
     
 
 
-sub device_attr
-{
-    my $self = shift;
-    my $attr = shift;
-
-    return $self->{'options'}->{'job'}->device_attr
-        ( $self->{'options'}->{'device'}, $attr );
-}
-
-
-sub device_credentials_attr
-{
-    my $self = shift;
-    my $attr = shift;
-
-    return $self->{'options'}->{'job'}->device_credentials_attr
-        ( $self->{'options'}->{'device'}, $attr );
-}
-
 
 
 # Returns an Expect object after authentication
@@ -168,9 +141,8 @@ sub connect
 
     my $exp = $self->_open_expect();
     
-    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
     my $method = $self->{'attr'}{'cli.access-method'};            
-    my $ipaddr = $self->{'options'}->{'device'}{'ADDRESS'};
+    my $ipaddr = $self->device->{'ADDRESS'};
     
     $Gerty::log->debug('Connecting to ' . $ipaddr . ' with ' . $method);
 
@@ -247,8 +219,6 @@ sub _open_expect
 {
     my $self = shift;
 
-    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
-
     my $exp = new Expect();
     if( not $Gerty::expect_debug )
     {
@@ -262,13 +232,13 @@ sub _open_expect
         {
             $Gerty::log->warning
                 ('The directory ' . $logdir . ' is specified as cli.log-dir ' .
-                 ' for ' . $sysname . ' does not exist ');
+                 ' for ' . $self->sysname . ' does not exist ');
         }
         else
         {
             $exp->log_file
                 (sprintf('%s/%s.%s.log',
-                         $logdir, $sysname,
+                         $logdir, $self->sysname,
                          time2str($self->{'attr'}{'cli.logfile-timeformat'},
                                   time())));
         }
@@ -276,7 +246,7 @@ sub _open_expect
     else
     {
         $Gerty::log->info
-            ('cli.log-dir is not specified for ' . $sysname .
+            ('cli.log-dir is not specified for ' . $self->sysname .
              ', CLI logging is disabled');
     }
 
@@ -289,8 +259,6 @@ sub _login_ssh
 {
     my $self = shift;
     my $exp = shift;
-
-    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
 
     # Handle unknown host and password
     my $password = $self->{'attr'}{'cli.auth-password'};
@@ -311,7 +279,7 @@ sub _login_ssh
           ['eof', sub {$failure = 'Connection closed'}]) )
     {
         $Gerty::log->error
-            ('Could not match the output for ' . $sysname . ': ' . 
+            ('Could not match the output for ' . $self->sysname . ': ' . 
              $exp->before());            
         $exp->hard_close();
         return undef;
@@ -320,7 +288,7 @@ sub _login_ssh
     if( defined($failure))
     {
         $Gerty::log->error
-            ('Failed logging into ' . $sysname . ': ' . $failure);
+            ('Failed logging into ' . $self->sysname . ': ' . $failure);
         $exp->hard_close();
         return undef;
     }
@@ -335,8 +303,6 @@ sub _login_telnet
 { 
     my $self = shift;
     my $exp = shift;
-
-    my $sysname = $self->{'options'}->{'device'}->{'SYSNAME'};
 
     # Log into the remote system
     my $login = $self->{'attr'}{'cli.auth-username'};
@@ -370,7 +336,7 @@ sub _login_telnet
           ['-re', $prompt] ) )
     {
         $Gerty::log->error
-            ('Could not match the output for ' . $sysname . ': ' . 
+            ('Could not match the output for ' . $self->sysname . ': ' . 
              $exp->before());            
         $exp->hard_close();
         return undef;
@@ -379,7 +345,7 @@ sub _login_telnet
     if( defined($failure) )
     {
         $Gerty::log->error
-            ('Failed connecting to ' . $sysname . ': ' . $failure);
+            ('Failed connecting to ' . $self->sysname . ': ' . $failure);
         $exp->hard_close();
         return undef;
     }
