@@ -16,7 +16,7 @@
 # Abstract handler parent class
 
 
-package Gerty::Handler;
+package Gerty::HandlerBase;
 
 use strict;
 use warnings;

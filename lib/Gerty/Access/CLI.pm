@@ -18,7 +18,7 @@
 
 package Gerty::Access::CLI;
 
-use base qw(Gerty::Handler);
+use base qw(Gerty::HandlerBase);
 
 use strict;
 use warnings;
