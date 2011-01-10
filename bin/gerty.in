@@ -112,6 +112,7 @@ if( not $ok )
         "Common options:\n",
         "    --verbose       print extra diagnostics\n",
         "    --debug         print debugging information\n",
+        "    --deblvl=N      debug level [1]\n",
         "    --help          print the command usage help text\n";
     
     exit 1;
@@ -119,13 +120,15 @@ if( not $ok )
 
 
 my $debug = 0;
+$Gerty::debug_level = 1;
 my $verbose = 0;
 my $help_needed;
 
 $ok = GetOptions(
-                 'verbose'     => \$verbose,
-                 'debug'       => \$debug,
-                 'help'        => \$help_needed,
+                 'verbose'      => \$verbose,
+                 'debug'        => \$debug,
+                 'deblvl=i'     => \$Gerty::debug_level,
+                 'help'         => \$help_needed,
                  %{$Gerty::cmd_registry{$cmd}{'opts'}}
                  );
 
