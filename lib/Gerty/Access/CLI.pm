@@ -281,7 +281,8 @@ sub _login_ssh
               $exp->send($password . "\r"); exp_continue;}],
           ['-re', $prompt],
           ['timeout', sub {$failure = 'Connection timeout'}],
-          ['-re', qr/closed/i, sub {$failure = 'Connection closed'}],
+          ['-re', qr/connection .*closed/i,
+           sub {$failure = 'Connection closed'}],
           ['eof', sub {$failure = 'Connection closed'}]) )
     {
         $Gerty::log->error

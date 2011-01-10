@@ -117,7 +117,8 @@ sub connect
               $exp->send("yes\r"); exp_continue;}],
           ['-re', qr/password:/i, sub {
               $exp->send($password . "\r"); exp_continue;}],          
-          ['-re', qr/closed/i, sub {$failure = 'Connection closed'}],
+          ['-re', qr/connection .*closed/i,
+           sub {$failure = 'Connection closed'}],
           ['-re', qr/.+/, sub {exp_continue}],         
           ['eof', sub {$failure = 'Connection closed'}],
           );
