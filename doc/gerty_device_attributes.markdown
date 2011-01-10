@@ -236,7 +236,58 @@ Optional attributes:
   saving the result.
 
 
+
+Gerty::Netconf::Transport::Expect handler
+-----------------------------------------
+
+This is a base class for other NETCONF access handlers. Default values are
+specified in *Gerty.Netconf.Default.ini*.
+
+Mandatory attributes:
+
+* __netconf.timeout__ [15]: Netconf processing timeout.
+
+Optional attributes:
+
+* __netconf.log-dir__, __netconf.log-enabled__, __netconf.logfile-timeformat__:
+see the description of similar parameters in Gerty::Access::CLI.
+
+
   
+Gerty::Netconf::Transport::SSH access handler
+---------------------------------------------
+
+This access handler should be used for NETCONF over SSH connections (RFC4742).
+Default values are specified in *Gerty.Netconf.Default.ini*.
+
+Mandatory attributes:
+
+* __netconf.ssh-port__ [830]: TCP port number for SSH access.
+
+* __netconf.ssh-subsystem__ [netconf]: SSH subsystem as specified in RFC4742.
+
+* __netconf.ssh-use-password__ [1]: if set to true, public key authentication
+is not used and *netconf.auth-password* becomes mandatory. If the attrubute
+is set to false, only public key authentication is tried.
+
+* __netconf.auth-password__: user password (only required
+if *netconf.ssh-use-password* is set to true).
+
+
+
+Gerty::Netconf::ActionHandler
+-----------------------------
+
+This action handler provides a basic interface for NETCONF actions.
+All actions are implemented in mix-in modules, so at least one mix-in should
+be specified.
+
+Mandatory attributes:
+
+* __+netconf.handler-mixins__: additive, comma-separated list of mix-in
+modules for NETCONF actions.
+
+
   
 
 
