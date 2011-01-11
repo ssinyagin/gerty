@@ -26,6 +26,8 @@ use warnings;
 use XML::LibXML;
 use XML::LibXML::XPathContext;
 
+use Gerty::Netconf::RPCRequest;
+use Gerty::Netconf::RPCReply;
 
 sub new
 {
@@ -161,13 +163,24 @@ sub new
     }
 
     {
-        my $hello_xc = $self->receive_as_xpath_context();
-        if( not defined($hello_xc) )
+        my $hello_result = $self->receive_as_string();
+        if( not defined($hello_result) )
         {
+            $Gerty::log->error('Failed to receive RPC hello message');
+            return undef;
+        }
+
+        my $parser = new XML::LibXML;
+        my $doc = $parser->parse_string($hello_result);
+        if( not defined($doc) )
+        {
+            $Gerty::log->error('Failed to parse RPC hello XML');
             return undef;
         }
         
-        my @cap_nodes = $hello_xc->findnodes('hello//capability');
+        my $xpc = new XML::LibXML::XPathContext($doc);
+        
+        my @cap_nodes = $xpc->findnodes('hello//capability');
         $self->{'server_capability'} = {};
         foreach my $node (@cap_nodes)
         {
@@ -181,6 +194,8 @@ sub new
             }
         }
     }
+
+    $self->{'message-id'} = 1;
     
     return $self;
 }
@@ -227,31 +242,45 @@ sub receive_as_string
     
 
 
-sub receive_as_doc
+sub send_rpc
 {
     my $self = shift;
-    my $string = $self->receive_as_string();
-    if( not defined($string) )
-    {
-        return undef;
-    }
-
-    my $parser = new XML::LibXML;
-    return $parser->parse_string($string);
-}
-
-
-sub receive_as_xpath_context
-{
-    my $self = shift;
-    my $doc = $self->receive_as_doc();
-    if( not defined($doc) )
-    {
-        return undef;
-    }
+    my $request = shift;
     
-    return(new XML::LibXML::XPathContext($doc));
+    $request->set_message_id( $self->{'message-id'} );
+    
+    $self->send_string($request->doc->toString(2));
+
+    my $reply_string = $self->receive_as_string();
+    if( not defined($reply_string) )
+    {
+        $Gerty::log->error('Failed to receive RPC reply');
+        return 0;
+    }
+
+    my $reply = new Gerty::Netconf::RPCReply( $reply_string );
+    if( not defined($reply) )
+    {
+        $Gerty::log->error('Failed to parse RPC reply XML');
+        return 0;
+    }
+
+    if( $reply->is_error() )
+    {
+        $Gerty::log->error('RPC error');
+        $self->{'error_details'} = $reply->error_details();
+        return 0;
+    }
+
+    $self->{'result'} = $reply->doc;
+
+    # TODO: check that message-id in reply matches the one in request
+        
+    $self->{'message-id'}++;
+
+    return 1;
 }
+
 
 
 sub send_string
@@ -271,6 +300,9 @@ sub send_doc
 }
 
 
+
+
+    
 
         
              
