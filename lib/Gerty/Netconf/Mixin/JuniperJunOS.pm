@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use Gerty::Netconf::RPCRequest;
+use JSON ();
 
 our $retrieve_action_handlers = \&retrieve_action_handlers;
 
@@ -31,7 +32,7 @@ sub retrieve_action_handlers
     my $self = shift;
 
     my $ret = {
-        'junos.get-vpls-mac-table' => \&get_vpls_mac_table,
+        'junos.get-vpls-mac-counts' => \&get_vpls_mac_counts,
     };
 
     my $actions = $self->device_attr('+junos.command-actions');
@@ -85,12 +86,86 @@ sub command
 }
 
 
+# Retrieve VPLS MAC counts
+# http://goo.gl/KeCjX
+#  <rpc>
+#    <get-vpls-mac-table>
+#      <count/>
+#    </get-vpls-mac-table>
+#  </rpc>
 
 
-sub get_vpls_mac_table
+sub get_vpls_mac_counts
 {
     my $self = shift;
-    # TODO
+
+    my $req = new Gerty::Netconf::RPCRequest;
+    my $method_node = $req->set_method('get-vpls-mac-table');
+    $method_node->appendChild($req->doc->createElement('count'));
+    
+    my $reply = $self->send_rpc($req);
+    if( not defined($reply) )
+    {
+        return {'success' => 0,
+                'content' => 'Failed to send Netconf RPC request'};
+    }
+
+    if( $self->device_attr('junos.netconf.rawxml') )
+    {
+        return {'success' => 1, 'content' => $reply->doc->toString()};
+    }
+    
+    my $ret = {};
+    foreach my $entry_node
+        ($reply->xpc->findnodes('//netconf:l2ald-rtb-mac-count-entry'))
+    {
+        my $r = {};
+        
+        my $rtb_name =
+            $reply->xpc->findvalue('netconf:rtb-name', $entry_node);
+
+        # Convert count strings into numbers
+        $r->{'total_macs'} =
+            0 + $reply->xpc->findvalue('netconf:rtb-mac-count', $entry_node);
+
+        # per-interface MAC counts
+        
+        $r->{'interface_macs'} = {};
+        foreach my $if_node
+            ($reply->xpc->findnodes('.//netconf:l2ald-rtb-if-mac-count-entry',
+                                    $entry_node))
+        {
+            my $if_name =
+                $reply->xpc->findvalue('netconf:interface-name', $if_node);
+            my $mac_count =
+                0 + $reply->xpc->findvalue('netconf:mac-count', $if_node);
+            
+            $r->{'interface_macs'}{$if_name} = $mac_count;
+        }
+
+        # per-VLAN MAC counts
+        
+        $r->{'vlan_macs'} = {};
+        foreach my $vlan_node
+            ($reply->xpc->findnodes
+             ('.//netconf:l2ald-rtb-learn-vlan-mac-count-entry', $entry_node))
+        {
+            my $vlan =
+                $reply->xpc->findvalue('netconf:learn-vlan', $vlan_node);
+            my $mac_count =
+                0 + $reply->xpc->findvalue('netconf:mac-count', $vlan_node);
+            
+            $r->{'vlan_macs'}{$vlan} = $mac_count;
+        }
+
+        
+        $ret->{$rtb_name} = $r;
+    }
+
+    my $json = new JSON;
+    $json->pretty(1);
+    
+    return {'success' => 1, 'content' => $json->encode($ret)};
 }
 
 

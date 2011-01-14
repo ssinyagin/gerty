@@ -307,9 +307,15 @@ attribute __XXX.command__.
 CLI command string which would be executed. The resulting output is
 generated in XML format.
 
+* __junos.netconf.rawxml__: if set to true, the actions return raw XML text
+as output. Otherwise, the output is in JSON format. This applies to all
+but command actions.
+
 Actions:
 
-* __junos.get-vpls-mac-table__: TODO
+* __junos.get-vpls-mac-counts__: Retrieves the MAC counts from the VPLS
+MAC learning tables on a router. For each routing instance, there's the total
+number of MACs, and also counts per interface and per VLAN.
 
 
 
