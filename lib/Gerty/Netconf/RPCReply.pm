@@ -36,7 +36,8 @@ sub new
     my $parser = new XML::LibXML;
     $self->{'doc'} = $parser->parse_string($string);
     $self->{'xpc'} = new XML::LibXML::XPathContext($self->doc);
-    
+    $self->{'xpc'}->registerNs
+        ('netconf', 'urn:ietf:params:xml:ns:netconf:base:1.0');
     return $self;
 }
 

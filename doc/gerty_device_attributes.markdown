@@ -289,6 +289,29 @@ modules for NETCONF actions.
 
 
   
+Gerty::Netconf::Mixin::JuniperJunOS
+-----------------------------------
+
+This action handler mix-in module provides NETCONF interface for Juniper
+routers. It provides interface to all CLI commands through an undocumented
+Netconf method: <command>. Also some additional actions are spported for
+some specific reports.
+
+Optional attributes:
+
+* __+junos.command-actions__: a list of actions which would be executed through
+<command> method. For each action __XXX__, there should be a corresponding
+attribute __XXX.command__.
+
+* __XXX.command__: for each action name XXX, this parameter defines a
+CLI command string which would be executed. The resulting output is
+generated in XML format.
+
+Actions:
+
+* __junos.get-vpls-mac-table__: TODO
+
+
 
 
   

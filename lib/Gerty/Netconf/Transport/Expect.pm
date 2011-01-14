@@ -162,13 +162,15 @@ sub send_netconf_message
     my $self = shift;
     my $msg = shift;
 
+    $msg .= "\n" . ']]>]]>' . "\n";
     if( $Gerty::debug_level >= 2 )
     {
         $Gerty::log->debug
             ($self->sysname . ': sending Netconf message: ' . $msg);
     }
     
-    $self->expect->send($msg . "\n" . ']]>]]>' . "\n");
+    $self->expect->send($msg);
+    $self->expect->print_log_file($msg);
 }
 
 

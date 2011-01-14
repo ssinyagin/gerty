@@ -26,7 +26,6 @@ use warnings;
 use XML::LibXML;
 use XML::LibXML::XPathContext;
 
-use Gerty::Netconf::RPCRequest;
 use Gerty::Netconf::RPCReply;
 
 sub new
@@ -80,8 +79,8 @@ sub new
                 next;
             }
             
-            my $var = "\$" . $module . '::action_handlers';
-            my $handlers = eval($var);
+            my $var = "\$" . $module . '::retrieve_action_handlers';
+            my $retr_handlers = eval($var);
             if( $@ )
             {
                 $Gerty::log->error
@@ -89,7 +88,7 @@ sub new
                 next;
             }
 
-            if( not defined($handlers) )
+            if( not defined($retr_handlers) )
             {
                 $Gerty::log->error
                     ($var . ' is not defined in mix-in module ' . $module);
@@ -99,6 +98,8 @@ sub new
             $Gerty::log->debug
                 ($self->sysname . ': ' .
                  'loaded Netconf mix-in module "' . $module . '"');
+
+            my $handlers = &{$retr_handlers}($self);
             
             while( my($action, $sub) = each %{$handlers} )
             {
@@ -159,7 +160,7 @@ sub new
             $caps_node->appendChild($node);
         }
 
-        $self->send_doc($doc);
+        $self->send_xml($root);
     }
 
     {
@@ -249,36 +250,42 @@ sub send_rpc
     
     $request->set_message_id( $self->{'message-id'} );
     
-    $self->send_string($request->doc->toString(2));
+    $self->send_xml($request->root);
 
     my $reply_string = $self->receive_as_string();
     if( not defined($reply_string) )
     {
         $Gerty::log->error('Failed to receive RPC reply');
-        return 0;
+        return undef;
     }
 
     my $reply = new Gerty::Netconf::RPCReply( $reply_string );
     if( not defined($reply) )
     {
         $Gerty::log->error('Failed to parse RPC reply XML');
-        return 0;
+        return undef;
     }
 
     if( $reply->is_error() )
     {
         $Gerty::log->error('RPC error');
         $self->{'error_details'} = $reply->error_details();
-        return 0;
+        return undef;
     }
 
-    $self->{'result'} = $reply->doc;
-
-    # TODO: check that message-id in reply matches the one in request
-        
+    my $msgid = $reply->xpc->findvalue
+        ('/netconf:rpc-reply/@message-id');
+    if( $msgid != $self->{'message-id'} )
+    {
+        $Gerty::log->error('message-id in RPC Reply (' . $msgid . ') ' .
+                           'does not match that in Request ' .
+                           '(' . $self->{'message-id'} . ')');
+        $reply = undef;
+    }
+    
     $self->{'message-id'}++;
 
-    return 1;
+    return $reply;
 }
 
 
@@ -292,11 +299,11 @@ sub send_string
 }
 
 
-sub send_doc
+sub send_xml
 {
     my $self = shift;
-    my $doc = shift;    
-    $self->send_string($doc->toString(2));
+    my $node = shift;    
+    $self->send_string($node->toString());
 }
 
 
