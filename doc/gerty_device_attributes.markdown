@@ -75,8 +75,8 @@ Optional attributes
 * __XXX.path__: store the action results in a given directory, instead of the 
   one specified by *output.default-path*
 
-* __XXX.postprocess__: if defined, expected to have a name of a Perl module 
-  which is called to process the results of the action.
+* __+XXX.postprocess-handlers__: if defined, expected to have a list of Perl
+module names which are called to process the results of the action.
 
 * __admin-mode__: if set to true value, the command handler tries to enter 
   into administrative mode (*enable* in Cisco terms). 

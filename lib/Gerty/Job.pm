@@ -145,6 +145,35 @@ sub load_and_execute
 }
 
 
+sub load_module_and_execute
+{
+    my $self = shift;
+    my $dev = shift;
+    my $handler_module = shift;
+    my $method = shift;
+    my @args = @_;
+
+    eval(sprintf('require %s', $handler_module));
+    if( $@ )
+    {
+        $Gerty::log->critical
+            ('Error loading Perl module ' . $handler_module .
+             ' for device "' . $dev->{'SYSNAME'} . '": ' . $@);
+        return undef;            
+    }
+    
+    my $ret = eval(sprintf('%s->%s(@args)', $handler_module, $method));
+    if( $@ )
+    {
+        $Gerty::log->critical
+            ('Error executing ' . $handler_module .
+             '->' . $method . ': ' . $@);
+        return undef;
+    }
+    
+    return $ret;    
+}
+
 
 sub attr
 {
@@ -563,17 +592,22 @@ sub execute
                 # immediately (must not take too much time, as we still have
                 # CLI session open)
             
-                my $pp_attr = $action . '.postprocess';
-                if( defined( $self->device_attr($dev, $pp_attr) ) )
+                my $pp_list = $self->device_attr
+                    ($dev, '+' . $action . '.postprocess-handlers');
+                
+                if( defined($pp_list) )
                 {
-                    my $pp_handler = $self->load_and_execute
-                        ($dev, $pp_attr, 'new',
-                         {'job' => $self, 'device' => $dev});
-                    
-                    if( $pp_handler )
+                    foreach my $handler_module (split(/,/o, $pp_list))
                     {
-                        $pp_attr->process($result, $output_handler);
-                    }                    
+                        my $pp_handler = $self->load_module_and_execute
+                            ($dev, $handler_module, 'new',
+                             {'job' => $self, 'device' => $dev});
+                        
+                        if( $pp_handler )
+                        {
+                            $pp_handler->process_result($action, $result);
+                        }
+                    }
                 }
             }
             
