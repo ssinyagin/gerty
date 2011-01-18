@@ -135,6 +135,7 @@ sub execute
     }
     else
     {        
+        $Gerty::log->info('Starting ' . $nprocesses . ' processes');
         # Initialize child processes and distribute the devices evenly
         my @proc_dev;
         foreach my $proc (0 .. ($nprocesses-1))
