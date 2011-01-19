@@ -85,6 +85,13 @@ sub retrieve_devices
     
     # Retrieve raw tabular data and process it according to 'source.fields'
     my $data = $self->{'driver'}->retrieve_devices();
+    if( not defined($data) )
+    {
+        $Gerty::log->critical('Failed to retrieve the devices from the list ' .
+                              $self->{'listname'});
+        return [];
+    }
+    
     my @fields = split(/\s*,\s*/o, $self->{'options'}{'source.fields'});
                        
     my $ret = [];

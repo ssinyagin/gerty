@@ -99,9 +99,13 @@ sub retrieve_devices
     
     my $ftype = $self->{'options'}{'source.filetype'};
     my $ret = &{$filetypes{$ftype}{'process'}}($self);
+
+    if( defined($ret) )
+    {
+        $Gerty::log->debug('Gerty::DeviceList::File - retrieved  ' .
+                           scalar(@{$ret}) . ' devices');
+    }
     
-    $Gerty::log->debug('Gerty::DeviceList::File - retrieved  ' .
-                       scalar(@{$ret}) . ' devices');
     return $ret;
 }
     
