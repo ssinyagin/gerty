@@ -27,6 +27,7 @@ use strict;
 use warnings;
 
 use JSON ();
+use Date::Format;
 use Gerty::DBLink;
 
 my %action_processor =
@@ -110,42 +111,32 @@ sub process_vpls_mac_counts
         return;
     }
 
-    my $now = time();
-
-    my $sth_total = $dblink->dbh->prepare
-        ('INSERT INTO JNX_VPLS_TOTAL_MAC_COUNT ' .
-         '(HOSTNAME, INSTANCE_NAME, MAC_COUNT, TS_ADDED) ' .
-         'VALUES (?,?,?,?)');
-
-    my $sth_intf = $dblink->dbh->prepare
-        ('INSERT INTO JNX_VPLS_INTF_MAC_COUNT ' .
-         '(HOSTNAME, INSTANCE_NAME, INTERFACE_NAME, MAC_COUNT, TS_ADDED) ' .
-         'VALUES (?,?,?,?,?)');
+    my $now = 'to_date(\'' . time2str('%Y%m%d%H%M%S', time()) .
+        '\',\'YYYYMMDDHH24MISS\')';
     
-    my $sth_vlan = $dblink->dbh->prepare
-        ('INSERT INTO JNX_VPLS_VLAN_MAC_COUNT ' .
-         '(HOSTNAME, INSTANCE_NAME, VLAN_NUM, MAC_COUNT, TS_ADDED) ' .
-         'VALUES (?,?,?,?,?)');
-
     while(my ($instance, $r) = each %{$data})
     {
         if( defined($r->{'total_macs'}) )
         {
-            $sth_total->execute( $self->sysname,
-                                 $instance,
-                                 $r->{'total_macs'},
-                                 $now );
+            update_mac_counts
+                ($dblink->dbh,
+                 $now,
+                 {'HOSTNAME' => $self->sysname,
+                  'INSTANCE_NAME' => $instance,
+                  'MAC_COUNT' => $r->{'total_macs'}});
         }
 
         if( defined($r->{'interface_macs'}) )
         {
             while(my ($intf, $count) = each %{$r->{'interface_macs'}})
             {
-                $sth_intf->execute( $self->sysname,
-                                    $instance,
-                                    $intf,
-                                    $count,
-                                    $now );
+                update_mac_counts
+                    ($dblink->dbh,
+                     $now,
+                     {'HOSTNAME' => $self->sysname,
+                      'INSTANCE_NAME' => $instance,
+                      'INTERFACE_NAME' => $intf,
+                      'MAC_COUNT' => $count});
             }
         }
 
@@ -153,18 +144,79 @@ sub process_vpls_mac_counts
         {
             while(my ($vlan, $count) = each %{$r->{'vlan_macs'}})
             {
-                $sth_vlan->execute( $self->sysname,
-                                    $instance,
-                                    $vlan,
-                                    $count,
-                                    $now );
+                update_mac_counts
+                    ($dblink->dbh,
+                     $now,
+                     {'HOSTNAME' => $self->sysname,
+                      'INSTANCE_NAME' => $instance,
+                      'VLAN_NUM' => $vlan,
+                      'MAC_COUNT' => $count});
             }
         }
     }
-    
-    $dblink->dbh->commit();
 }
 
+
+
+sub update_mac_counts
+{
+    my $dbh = shift;
+    my $now = shift;
+    my $v = shift;
+    
+
+    my $where =
+        'HOSTNAME=\'' . $v->{'HOSTNAME'} . '\' AND ' .
+        'INSTANCE_NAME=\'' . $v->{'INSTANCE_NAME'} . '\' ';
+    
+    my $columns = 'HOSTNAME, INSTANCE_NAME';
+    my $values =
+        '\'' . $v->{'HOSTNAME'} . '\', \'' . $v->{'INSTANCE_NAME'} . '\'';
+    
+    foreach my $col ('INTERFACE_NAME', 'VLAN_NUM')
+    {
+        if( defined($v->{$col}) )
+        {
+            $where .= 'AND ' . $col . '=\'' . $v->{$col} . '\' ';
+            $columns .= ', ' . $col;
+            $values .= ', \'' . $v->{$col} . '\'';
+        }
+        else
+        {
+            $where .= 'AND ' . $col . ' IS NULL ';
+        }
+    }
+
+    my $result = $dbh->selectall_arrayref
+        ('SELECT COUNT(*) FROM JNX_VPLS_CURRENT_MAC_COUNT ' .
+         'WHERE ' . $where);
+    
+    if( defined($result) and $result->[0][0] > 0 )
+    {
+        $dbh->do
+            ('UPDATE JNX_VPLS_CURRENT_MAC_COUNT SET ' .
+             'MAC_COUNT=' . $v->{'MAC_COUNT'} . ' ,' .
+             'LAST_UPDATED=' . $now . ' ' .
+             'WHERE ' . $where);
+    }
+    else
+    {
+        $dbh->do
+            ('INSERT INTO JNX_VPLS_CURRENT_MAC_COUNT ' .
+             '(' . $columns . ', MAC_COUNT, LAST_UPDATED) ' .
+             'VALUES(' . $values . ', ' .
+             $v->{'MAC_COUNT'} . ', ' . $now . ')');
+        
+    }
+
+    $dbh->do
+        ('INSERT INTO JNX_VPLS_HISTORY_MAC_COUNT ' .
+         '(' . $columns . ', MAC_COUNT, UPDATE_TS) ' .
+         'VALUES(' . $values . ', ' .
+         $v->{'MAC_COUNT'} . ', ' . $now . ')');
+    
+    $dbh->commit();
+}
 
              
 1;
