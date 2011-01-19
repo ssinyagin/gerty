@@ -102,7 +102,19 @@ Source type "Gerty::DeviceList::DBI"
 -------------------------------------
 
 This source type retrieves the devices from an SQL database.
-Not implemented yet.
+
+Mandatory attributes:
+
+* __source.dsn__: defines the database connection string as specified in
+Perl DBI documentation
+
+* __source.username__: database user
+
+* __source.password__: database user
+
+* __source.query__: SQL query that is to retrieve the devices and their
+properties.
+
 
 
 

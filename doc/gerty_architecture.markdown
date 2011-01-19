@@ -48,7 +48,7 @@ attribute is only used in the *[job]* section in the job definition file.
 
 Device attributes, those which define the Gerty's behavior at the device 
 level, are looked up in a hierarchical fashion, from the top parent class to 
-the job leve. See *Gerty Device Attributes* document for details.
+the job level. See *Gerty Device Attributes* document for details.
 
 Example of a job file (**/opt/gerty/Company/jobs/backbone.job.ini**):
 
@@ -109,7 +109,7 @@ Example of a siteconfig file (**/opt/gerty/Company/siteconfig.ini**):
     [devices juniper-mx-pe]
       description = "Juniper MX series as MPLS PE routers"
 
-      ; example of SQL import (not implemented yet)
+      ; example of SQL import
       source.type = Gerty::DeviceList::DBI
 
       ; Database connection attributes
