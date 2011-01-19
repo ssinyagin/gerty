@@ -94,6 +94,7 @@ sub command
 #    </get-vpls-mac-table>
 #  </rpc>
 
+my %rdb_blacklist = ('__juniper_private1__' => 1);
 
 sub get_vpls_mac_counts
 {
@@ -123,6 +124,8 @@ sub get_vpls_mac_counts
         
         my $rtb_name =
             $reply->xpc->findvalue('netconf:rtb-name', $entry_node);
+        
+        next if $rdb_blacklist{$rtb_name};
 
         # Convert count strings into numbers
         $r->{'total_macs'} =
