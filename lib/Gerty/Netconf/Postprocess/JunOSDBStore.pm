@@ -165,55 +165,23 @@ sub update_mac_counts
     my $v = shift;
     
 
-    my $where =
-        'HOSTNAME=\'' . $v->{'HOSTNAME'} . '\' AND ' .
-        'INSTANCE_NAME=\'' . $v->{'INSTANCE_NAME'} . '\' ';
-    
-    my $columns = 'HOSTNAME, INSTANCE_NAME';
-    my $values =
-        '\'' . $v->{'HOSTNAME'} . '\', \'' . $v->{'INSTANCE_NAME'} . '\'';
-    
-    foreach my $col ('INTERFACE_NAME', 'VLAN_NUM')
+    my @columns;
+    my @values;
+
+    foreach my $col ('HOSTNAME', 'INSTANCE_NAME',
+                     'INTERFACE_NAME', 'VLAN_NUM', 'MAC_COUNT')
     {
         if( defined($v->{$col}) )
         {
-            $where .= 'AND ' . $col . '=\'' . $v->{$col} . '\' ';
-            $columns .= ', ' . $col;
-            $values .= ', \'' . $v->{$col} . '\'';
-        }
-        else
-        {
-            $where .= 'AND ' . $col . ' IS NULL ';
+            push(@columns, $col);
+            push(@values, '\'' . $v->{$col} . '\'');
         }
     }
-
-    my $result = $dbh->selectall_arrayref
-        ('SELECT COUNT(*) FROM JNX_VPLS_CURRENT_MAC_COUNT ' .
-         'WHERE ' . $where);
     
-    if( defined($result) and $result->[0][0] > 0 )
-    {
-        $dbh->do
-            ('UPDATE JNX_VPLS_CURRENT_MAC_COUNT SET ' .
-             'MAC_COUNT=' . $v->{'MAC_COUNT'} . ' ,' .
-             'LAST_UPDATED=' . $now . ' ' .
-             'WHERE ' . $where);
-    }
-    else
-    {
-        $dbh->do
-            ('INSERT INTO JNX_VPLS_CURRENT_MAC_COUNT ' .
-             '(' . $columns . ', MAC_COUNT, LAST_UPDATED) ' .
-             'VALUES(' . $values . ', ' .
-             $v->{'MAC_COUNT'} . ', ' . $now . ')');
-        
-    }
-
     $dbh->do
-        ('INSERT INTO JNX_VPLS_HISTORY_MAC_COUNT ' .
-         '(' . $columns . ', MAC_COUNT, UPDATE_TS) ' .
-         'VALUES(' . $values . ', ' .
-         $v->{'MAC_COUNT'} . ', ' . $now . ')');
+        ('INSERT INTO JNX_VPLS_MAC_COUNT_HISTORY ' .
+         '(' . join(',', @columns) . ', UPDATE_TS) ' .
+         'VALUES(' . join(',', @values) . ',' . $now . ')'); 
     
     $dbh->commit();
 }
