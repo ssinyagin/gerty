@@ -26,7 +26,6 @@ use base qw(Gerty::HandlerBase);
 use strict;
 use warnings;
 
-use JSON ();
 use Date::Format;
 use Gerty::DBLink;
 
@@ -55,6 +54,15 @@ sub process_result
 
     if( ref($action_processor{$action}) )
     {
+        if( not $result->{'has_rawdata'} )
+        {
+            $Gerty::log->error
+                ('Action result does not contain raw data for the action ' .
+                 $action . ' for device: ' .
+                 $self->sysname);
+            return;
+        }
+        
         if( $self->device_attr($action . '.update-db') )
         {
             my $dblink_name = $self->device_attr('junos.postprocess.dblink');
@@ -100,13 +108,12 @@ sub process_vpls_mac_counts
     my $result = shift;
     my $dblink = shift;
 
-    my $json = new JSON;
-    my $data = $json->decode($result->{'content'});
+    my $data = $result->{'rawdata'};
     
     if( not defined($data) )
     {
         $Gerty::log->error( 'Error in action post-processing' .
-                            'Cannot parse JSON in results of action "' .
+                            'Raw data is undefined in results of action "' .
                             $action . '" for device: ' . $self->sysname );
         return;
     }

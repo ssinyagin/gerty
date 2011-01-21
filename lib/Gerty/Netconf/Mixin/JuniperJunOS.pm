@@ -168,7 +168,13 @@ sub get_vpls_mac_counts
     my $json = new JSON;
     $json->pretty(1);
     
-    return {'success' => 1, 'content' => $json->encode($ret)};
+    return {
+        'success' => 1,
+        'content' => $json->encode($ret),
+        'rawdata' => $ret,
+        'has_json' => 1,
+        'has_rawdata' => 1,
+    };
 }
 
 
