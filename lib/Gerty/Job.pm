@@ -619,6 +619,9 @@ sub execute
             $Gerty::log->warning('Did not execute any actions for device: ' .
                                  $dev->{'SYSNAME'});
         }
+
+        $Gerty::log->debug('Disconnecting from ' . $dev->{'SYSNAME'});
+        $acc->close();
     }
 }
 

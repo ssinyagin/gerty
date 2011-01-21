@@ -67,9 +67,19 @@ sub close
 {
     my $self = shift;
 
-    if( defined($self->{'expect'}) )
+    if( defined($self->expect) )
     {
-        $self->{'expect'}->hard_close();
+        # If we're in a normal Netconf exchange, send close-session
+        # as specified in RFC4741
+        if( $self->{'normal_netconf_flow'} )
+        {
+            $self->send_netconf_message
+                ('<rpc message-id="0" ' .
+                 'xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">' . 
+                 '<close-session/></rpc>');
+            $self->expect()->expect( $self->timeout, 'eof' );
+        }
+        $self->expect()->hard_close();
         undef $self->{'expect'};
     }
 }
@@ -154,6 +164,7 @@ sub add_outstanding_message
     my $msg = shift;
 
     push( @{$self->{'outstanding_messages'}}, $msg );
+    $self->{'normal_netconf_flow'} = 1;
 }
 
 
@@ -192,10 +203,12 @@ sub receive_netconf_message
         if( $exp->expect( $self->timeout, ']]>]]>' ) )
         {
             $ret->{'msg'} = $exp->exp_before();
+            $self->{'normal_netconf_flow'} = 1;
         }
         else
         {
             $ret->{'success'} = 0;
+            $self->{'normal_netconf_flow'} = 0;
         }
     }
 
