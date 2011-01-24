@@ -16,7 +16,7 @@
 # Parent class for command-line interface handlers
 
 
-package Gerty::CLIHandler::Generic;
+package Gerty::CLI::GenericAction;
 
 use base qw(Gerty::HandlerBase);
 
@@ -275,7 +275,7 @@ sub do_action
     if( not defined($self->{'command_actions'}{$action}) )
     {
         my $err = 'Unsupported action: ' . $action .
-            ' in Gerty::CLIHandler::Generic';
+            ' in Gerty::CLI::GenericAction';
         $Gerty::log->error($err);
         return {'success' => 0, 'content' => $err};
     }

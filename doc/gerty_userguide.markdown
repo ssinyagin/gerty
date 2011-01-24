@@ -197,7 +197,7 @@ Attributes* document for a complete list of actions implemented in Gerty
 distributions. New actions, such as interactive CLI scripts for your specific 
 tasks, can be defined in your site-specific Perl modules.
 
-The `Gerty::CLIHandler::Generic` CLI handler module allows you to define new 
+The `Gerty::CLI::GenericAction` CLI handler module allows you to define new 
 simple actions consisting of one or several CLI commands.
 
 The following example defines a new generic device class and a few useful

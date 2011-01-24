@@ -16,9 +16,9 @@
 # SSH jump-host access
 
 
-package Gerty::Access::SSHProxy;
+package Gerty::CLI::SSHProxy;
 
-use base qw(Gerty::Access::CLI);
+use base qw(Gerty::CLI::DirectAccess);
 
 use strict;
 use warnings;

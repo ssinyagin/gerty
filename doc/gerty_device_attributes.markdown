@@ -50,7 +50,7 @@ Mandatory attributes
 Default values are specified in *Gerty.Default.ini*.
 
 * __access-handler__: refers to a Perl module that implements the access to 
-  a device. Default value: *Gerty::Access::CLI* -- this module defines a 
+  a device. Default value: *Gerty::CLI::DirectAccess* -- this module defines a 
   command-line interface suitable for most device vendors.
 
 * __credentials-source__: defines the way Gerty should know the login 
@@ -58,7 +58,7 @@ Default values are specified in *Gerty.Default.ini*.
   name. Default is *inline*.
 
 * __job.action-handler__: refers to a Perl class that processes the CLI
-  input/output. Example: *Gerty::CLIHandler::CiscoLike*.
+  input/output. Example: *Gerty::CLI::CiscoLike*.
 
 * __job.output-handler__: defines the Perl class that is used for action 
   output processing. Default: *Gerty::Output::File*.
@@ -70,7 +70,7 @@ Optional attributes
 
 * __do.XXX__: if the value is true, execute the action XXX on the device. 
   Action names are defined by the command handlers, such 
-  as *Gerty::CLIHandler::CiscoLike*. 
+  as *Gerty::CLI::CiscoLike*. 
 
 * __XXX.path__: store the action results in a given directory, instead of the 
   one specified by *output.default-path*
@@ -109,8 +109,8 @@ Optional attributes:
 
 
    
-Gerty::Access::CLI access handler
----------------------------------
+Gerty::CLI::DirectAccess access handler
+---------------------------------------
 
 Default values are specified in *Gerty.Default.ini*.
 
@@ -148,11 +148,11 @@ Optional attributes:
  
  
 
-Gerty::Access::SSHProxy access handler
---------------------------------------
+Gerty::CLI::SSHProxy access handler
+-----------------------------------
 
 This access handler connects to an SSH jump-host, and then continues 
-with the normal behavior of Gerty::Access::CLI.
+with the normal behavior of Gerty::CLI::DirectAccess.
 
 Default values are specified in *Gerty.Default.ini*.
 
@@ -174,11 +174,11 @@ Mandatory attributes:
   
 
 
-Gerty::CLIHandler::Generic command handler
-------------------------------------------
+Gerty::CLI::GenericAction command handler
+-----------------------------------------
 
 This handler implements basic command execution and is designed for being 
-inherited by other handlers, such as *Gerty::CLIHandler::CiscoLike*.
+inherited by other handlers, such as *Gerty::CLI::CiscoLike*.
 
 Optional parameters:
 
@@ -198,8 +198,8 @@ Optional parameters:
    the command output. *Gerty.CiscoLike.ini* defines it as `^\%`
   
 
-Gerty::CLIHandler::CiscoLike command handler
---------------------------------------------
+Gerty::CLI::CiscoLike command handler
+-------------------------------------
 
 Actions:
 
@@ -253,7 +253,7 @@ Mandatory attributes:
 Optional attributes:
 
 * __netconf.log-dir__, __netconf.log-enabled__, __netconf.logfile-timeformat__:
-see the description of similar parameters in Gerty::Access::CLI.
+see the description of similar parameters in Gerty::CLI::DirectAccess.
 
 
   

@@ -16,7 +16,7 @@
 # Command-line actions for Cisco 7600 series routers
 
 
-package Gerty::CLIMixin::Cisco7600;
+package Gerty::CLI::Mixin::Cisco7600;
 
 use strict;
 use warnings;

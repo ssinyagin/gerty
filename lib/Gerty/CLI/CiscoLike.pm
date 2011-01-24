@@ -16,8 +16,8 @@
 # Command-line interface for Cisco-like devices
 
 
-package Gerty::CLIHandler::CiscoLike;
-use base qw(Gerty::CLIHandler::Generic);
+package Gerty::CLI::CiscoLike;
+use base qw(Gerty::CLI::GenericAction);
 
 use strict;
 use warnings;

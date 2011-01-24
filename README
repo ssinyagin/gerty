@@ -59,7 +59,7 @@ http://chilli.nosignal.org/mailman/listinfo/gerty-users
 TO DO
 -----
 
-* finalize Gerty::CLIMixin::Cisco7600
+* finalize Gerty::CLI::Mixin::Cisco7600
 * ping-before-telnet
 * DBI handler for DeviceList
 * blank out passwords

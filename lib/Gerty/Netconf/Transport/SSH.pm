@@ -14,8 +14,8 @@
 #  along with this program; if not, write to the Free Software
 
 # SSH transport for Netconf
-# We don't use Gerty::Access::CLI because of too many differences, and mainly
-# because there's no command-line prompt in Netconf
+# We don't use Gerty::CLI::DirectAccess because of too many differences,
+# and mainly because there's no command-line prompt in Netconf
 
 
 package Gerty::Netconf::Transport::SSH;

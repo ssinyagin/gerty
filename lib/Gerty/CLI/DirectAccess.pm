@@ -16,7 +16,7 @@
 # Command-line interface wrapper
 
 
-package Gerty::Access::CLI;
+package Gerty::CLI::DirectAccess;
 
 use base qw(Gerty::HandlerBase);
 
