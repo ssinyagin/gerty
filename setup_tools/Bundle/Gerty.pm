@@ -48,6 +48,8 @@ XML::LibXML 1.61
 
 XML::Hash::LX
 
+Net::SNMP
+
 =head1 AUTHOR
 
 Stanislav Sinyagin E<lt>F<ssinyagin@k-open.com>E<gt>
