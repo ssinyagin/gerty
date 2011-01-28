@@ -22,8 +22,8 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 perllibdir=@perllibdir@
-datadir=@datadir@
 datarootdir=@datarootdir@
+datadir=@datadir@
 pkgdatadir=@pkgdatadir@
 
 
