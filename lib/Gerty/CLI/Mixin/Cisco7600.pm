@@ -45,10 +45,11 @@ sub retrieve_action_handlers
 
 sub get7600something
 {
-    my $self = shift;
+    my $ahandler = shift;
+    my $action = shift;
 
     $Gerty::log->info('get7600something executed for ' .
-                      $self->{'device'}->{'SYSNAME'});
+                      $ahandler->{'device'}->{'SYSNAME'});
     
     return {'success' => 1, 'content' => 'blah blah'};
 }
