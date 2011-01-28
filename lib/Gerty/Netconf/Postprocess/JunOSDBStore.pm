@@ -17,6 +17,7 @@
 # It stores the results in a database.
 # See for DB definitions:
 #   share/sql/JunOSDBStore.dbinit.oracle.sql 
+#   share/sql/JunOSDBStore.dbinit.mysql.sql 
 
 
 package Gerty::Netconf::Postprocess::JunOSDBStore;
