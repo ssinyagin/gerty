@@ -26,9 +26,21 @@ use Expect qw(exp_continue);
 # at the moment only a stupid placeholder for testing purpose.
 # need to add some more flesh later
 
-our $action_handlers = {
+our $action_handlers_registry = {
     'get7600something' => \&get7600something,    
 };
+
+
+our $retrieve_action_handlers = \&retrieve_action_handlers;
+
+
+sub retrieve_action_handlers
+{
+    my $ahandler = shift;
+
+    return $action_handlers_registry;
+}
+
 
 
 sub get7600something

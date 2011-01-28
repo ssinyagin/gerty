@@ -18,7 +18,7 @@
 
 package Gerty::Netconf::ActionHandler;
 
-use base qw(Gerty::HandlerBase);
+use base qw(Gerty::MixinLoader);
 
 use strict;
 use warnings;
@@ -48,104 +48,16 @@ sub new
             return undef;
         }
     }
-    
-    foreach my $attr ('+netconf.handler-mixins')
-    {
-        $self->{$attr} = $self->device_attr($attr);
-    }
 
+    # Netconf Client capabilities. Mix-in modules can add their
+    # capabilities here upon initialization.
     
-    # initialize mix-in modules
-    $self->{'mixin_actions'} = {};
-    $self->{'mixin_origin'} = {};
-    
-    $self->{'client_capability'} = {
+    $self->{'netconf_client_capability'} = {
         'urn:ietf:params:xml:ns:netconf:base:1.0' => 1,
     };
+
+    $self->init_mixins('+netconf.handler-mixins');
     
-    my $mixins = $self->{'+netconf.handler-mixins'};
-    
-    if( defined($mixins) )
-    {
-        foreach my $module (split(/,/o, $mixins))
-        {
-            eval(sprintf('require %s', $module));
-            if( $@ )
-            {
-                $Gerty::log->error
-                    ('Error loading Perl module ' . $module .
-                     ' specified in "+netconf.handler-mixins" for device "' .
-                     $self->sysname . '": ' . $@);
-                next;
-            }
-            
-            my $var = "\$" . $module . '::retrieve_action_handlers';
-            my $retr_handlers = eval($var);
-            if( $@ )
-            {
-                $Gerty::log->error
-                    ('Error accessing ' . $var . ' : ' . $@);
-                next;
-            }
-
-            if( not defined($retr_handlers) )
-            {
-                $Gerty::log->error
-                    ($var . ' is not defined in mix-in module ' . $module);
-                next;
-            }
-
-            $Gerty::log->debug
-                ($self->sysname . ': ' .
-                 'loaded Netconf mix-in module "' . $module . '"');
-
-            my $handlers = &{$retr_handlers}($self);
-            
-            while( my($action, $sub) = each %{$handlers} )
-            {
-                if( defined( $self->{'mixin_actions'}{$action} ) )
-                {
-                    $Gerty::log->error
-                        ('Action ' . $action . ' is defined in two mix-in ' .
-                         'modules: ' . $module . ' and ' .
-                         $self->{'mixin_origin'}{$action});
-                }
-                else
-                {
-                    $self->{'mixin_actions'}{$action} = $sub;
-                    $self->{'mixin_origin'}{$action} = $module;
-                    $Gerty::log->debug
-                        ($self->sysname . ': ' .
-                         'registered Netconf action "' . $action .
-                         '" from mix-in "' . $module . '"');
-                }                
-            }
-
-            $var = "\$" . $module . '::client_capabilities';
-            my $client_caps = eval($var);
-            if( $@ )
-            {
-                $Gerty::log->error
-                    ('Error accessing ' . $var . ' : ' . $@);
-                next;
-            }
-
-            if( defined($client_caps) )
-            {
-                foreach my $cap (@{$client_caps})
-                {
-                    $self->{'client_capability'}{$cap} = 1;
-                    if( $Gerty::debug_level >= 2 )
-                    {
-                        $Gerty::log->debug
-                            ($self->sysname . ': NETCONF client capability ' .
-                             $cap);
-                    }
-                }
-            }
-        }
-    }
-
     {
         my $doc = XML::LibXML->createDocument( "1.0", "UTF-8" );
         my $root = $doc->createElement('hello');
@@ -153,7 +65,7 @@ sub new
         my $caps_node = $doc->createElement('capabilities');
         $root->appendChild($caps_node);
 
-        foreach my $cap (sort keys %{$self->{'client_capability'}})
+        foreach my $cap (sort keys %{$self->{'netconf_client_capability'}})
         {
             my $node = $doc->createElement('capability');
             $node->appendText($cap);
@@ -199,35 +111,6 @@ sub new
     $self->{'message-id'} = 1;
     
     return $self;
-}
-
-
-
-sub supported_actions
-{
-    my $self = shift;
-
-    my $ret = [];
-    push( @{$ret}, keys %{$self->{'mixin_actions'}} );
-    return $ret;
-}
-
-
-
-sub do_action
-{
-    my $self = shift;    
-    my $action = shift;
-
-    if( not defined($self->{'mixin_actions'}{$action}) )
-    {
-        my $err = 'Unsupported action: ' . $action .
-            ' in Gerty::Netconf::ActionHandler';
-        $Gerty::log->error($err);
-        return {'success' => 0, 'content' => $err};
-    }
-    
-    return &{$self->{'mixin_actions'}{$action}}($self, $action);
 }
 
 

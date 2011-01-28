@@ -18,7 +18,7 @@
 
 package Gerty::CLI::GenericAction;
 
-use base qw(Gerty::HandlerBase);
+use base qw(Gerty::MixinLoader);
 
 use strict;
 use warnings;
@@ -114,67 +114,17 @@ sub new
     }
 
     # initialize mix-in modules
-    $self->{'mixin_actions'} = {};
-    $self->{'mixin_origin'} = {};    
-    if( defined( $self->{'+cli.handler-mixins'} ) )        
+
+    $self->init_mixins('+cli.handler-mixins');
+    
+    foreach my $action (keys %{$self->{'command_actions'}})
     {
-        foreach my $module (split(/,/o, $self->{'+cli.handler-mixins'}))
+        if( $self->is_mixin_action($action) )
         {
-            eval(sprintf('require %s', $module));
-            if( $@ )
-            {
-                $Gerty::log->error
-                    ('Error loading Perl module ' . $module .
-                     ' specified in "+cli.handler-mixins" for device "' .
-                     $self->sysname . '": ' . $@);
-                next;
-            }
-
-            my $var = "\$" . $module . '::action_handlers';
-            my $handlers = eval($var);
-            if( $@ )
-            {
-                $Gerty::log->error
-                    ('Error accessing ' . $var . ' : ' . $@);
-                next;
-            }
-
-            if( not defined($handlers) )
-            {
-                $Gerty::log->error
-                    ($var . ' is not defined in mix-in module ' . $module);
-                next;
-            }
-
-            $Gerty::log->debug
-                ($self->sysname . ': ' .
-                 'loaded mix-in module "' . $module . '"');
-            
-            while( my($action, $sub) = each %{$handlers} )
-            {
-                if( defined($self->{'command_actions'}{$action}) )
-                {
-                    $Gerty::log->error
-                        ('Action ' . $action . ' is defined in mix-in ' .
-                         $module . ' and in "+cli.command-actions"');
-                }
-                elsif( defined( $self->{'mixin_actions'}{$action} ) )
-                {
-                    $Gerty::log->error
-                        ('Action ' . $action . ' is defined in two mix-in ' .
-                         'modules: ' . $module . ' and ' .
-                         $self->{'mixin_origin'}{$action});
-                }
-                else
-                {
-                    $self->{'mixin_actions'}{$action} = $sub;
-                    $self->{'mixin_origin'}{$action} = $module;
-                    $Gerty::log->debug
-                        ($self->sysname . ': ' .
-                         'registered CLI action "' . $action .
-                         '" from mix-in "' . $module . '"');
-                }                
-            }
+            $Gerty::log->error
+                ('Action ' . $action . ' defined in "+cli.command-actions" ' .
+                 'conflicts with the action defined in mix-in module ' .
+                 $self->mixin_origin($action));
         }
     }
     
@@ -256,7 +206,7 @@ sub supported_actions
 
     my $ret = [];
     push( @{$ret}, keys %{$self->{'command_actions'}} );
-    push( @{$ret}, keys %{$self->{'mixin_actions'}} );
+    push( @{$ret}, @{$self->SUPER::supported_actions()});
     return $ret;
 }
 
@@ -267,9 +217,9 @@ sub do_action
     my $self = shift;    
     my $action = shift;
 
-    if( defined($self->{'mixin_actions'}{$action}) )
+    if( $self->is_mixin_action($action) )
     {
-        return &{$self->{'mixin_actions'}{$action}}($self, $action);
+        return $self->SUPER::do_action($action);        
     }
     
     if( not defined($self->{'command_actions'}{$action}) )
