@@ -29,10 +29,10 @@ sub load
     $Config::Any::INI::MAP_SECTION_SPACE_TO_NESTED_KEY = 1;
     
     my $result = 
-        eval{ Config::Any->load_files
-                  ( { 'files' => [$filename],
-                      'force_plugins' => ['Config::Any::INI'],
-                      'flatten_to_hash' => 1 } ); };
+        Config::Any->load_files
+        ( { 'files' => [$filename],
+            'force_plugins' => ['Config::Any::INI'],
+            'flatten_to_hash' => 1 } );
     
     if( $@ )
     {
