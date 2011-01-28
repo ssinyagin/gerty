@@ -119,8 +119,20 @@ sub process_vpls_mac_counts
         return;
     }
 
-    my $now = 'to_date(\'' . time2str('%Y%m%d%H%M%S', time()) .
-        '\',\'YYYYMMDDHH24MISS\')';
+    my $now;
+
+    # at the moment only Oracle and Mysql are supported. Falling back to
+    # oracle if nothing else matches
+    
+    if( $dblink->dsn =~ /:mysql:/i )
+    {
+        $now = 'FROM_UNIXTIME(' . time() . ')';
+    }
+    else
+    {
+        $now = 'to_date(\'' . time2str('%Y%m%d%H%M%S', time()) .
+            '\',\'YYYYMMDDHH24MISS\')';
+    }
     
     while(my ($instance, $r) = each %{$data})
     {

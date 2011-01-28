@@ -62,6 +62,7 @@ sub new
 
 
 sub dbh {return shift->{'dbh'}}
+sub dsn {return shift->{'dsn'}}
 
 
 sub connect
