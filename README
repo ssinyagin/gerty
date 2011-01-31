@@ -67,6 +67,8 @@ TO DO
 * automate backup for Cisco files, like "vlan.dat"
    (suggested by Viktor Steinmann <stony@stony.com>)
 * write "Gerty Developer Guide"
+* update documentation on Netconf and SNMP
+* update documentation on DBLink and action postprocessing
 
 
 
