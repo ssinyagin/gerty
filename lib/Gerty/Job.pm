@@ -577,7 +577,7 @@ sub execute
             }
             else
             {
-                $Gerty::log->info
+                $Gerty::log->warn
                     ('Action ' . $action .
                      ' failed for device "' . $dev->{'SYSNAME'} .
                      '" : ' . $result->{'content'});
@@ -608,6 +608,9 @@ sub execute
                             $pp_handler->process_result($action, $result);
                         }
                     }
+                    $Gerty::log->info('Finished postprocessing for ' .
+                                      $action . ' for device "' .
+                                      $dev->{'SYSNAME'} . '"');
                 }
             }
             
