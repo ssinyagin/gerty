@@ -78,7 +78,10 @@ sub c3g_gsm_stats
 
     my $session = $ahandler->device->{'ACCESS_HANDLER'}->session();
 
-    my $result = {'timestamp' => time(),
+    my $now = time();
+    my $full_minute = $now - ($now % 60);
+    
+    my $result = {'timestamp' => $now,
                   'c3gGsmHistoryRssiPerMinute' => {},
                   'c3gCurrentServiceType' => {},
                   'c3gGsmCurrentBand' => {}};
@@ -95,7 +98,16 @@ sub c3g_gsm_stats
             {
                 my $phy = substr( $oid, $prefixLen );
                 my @values = unpack('C*', $val);
-                $result->{'c3gGsmHistoryRssiPerMinute'}{$phy} = \@values;
+                my $timestamp = $full_minute;
+                my $timestamped_values = [];
+                foreach my $val (@values)
+                {
+                    push( @{$timestamped_values}, [$val * -1, $timestamp] );
+                    $timestamp -= 60;
+                }
+                
+                $result->{'c3gGsmHistoryRssiPerMinute'}{$phy} =
+                    $timestamped_values;
             }        
         }
     }
