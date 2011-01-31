@@ -1,10 +1,10 @@
-// Oracle table definitions for
-//   Gerty::Netconf::Postprocess::JunOSDBStore
-//
+/* Oracle table definitions for
+   Gerty::Netconf::Postprocess::JunOSDBStore
+*/
 
 
 
-// ***********  MAC count history  ************
+/*  ***********  MAC count history  ************ */
 
 CREATE TABLE JNX_VPLS_MAC_COUNT_HISTORY
 (
@@ -29,7 +29,7 @@ CREATE INDEX JNX_VPLS_MAC_COUNT_HISTORY_I04
   ON JNX_VPLS_MAC_COUNT_HISTORY(UPDATE_TS);
 
 
-// ***********  Average counts over past 3 days  ************
+/* ***********  Average counts over past 3 days  ************ */
 
 CREATE VIEW JNX_VPLS_MAC_COUNT_AVG3DAYS AS
 SELECT
