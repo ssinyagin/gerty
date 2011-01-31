@@ -61,6 +61,7 @@ sub new
 }
 
 
+sub name {return shift->{'dblink'}}
 sub dbh {return shift->{'dbh'}}
 sub dsn {return shift->{'dsn'}}
 
@@ -79,7 +80,9 @@ sub connect
         'RaiseError' => 0,
         'PrintError' => 1,
     };
-    
+
+    $Gerty::log->debug('Connecting to database: ' . $self->{'dsn'});
+
     my $dbh = DBI->connect( $self->{'dsn'},
                             $self->{'username'},
                             $self->{'password'},
@@ -104,11 +107,38 @@ sub disconnect
 {
     my $self = shift;
     
+    $Gerty::log->debug('Disconnecting from database: ' . $self->{'dsn'});
+    
     if( defined($self->{'dbh'}) )
     {
         $self->{'dbh'}->disconnect();
         $self->{'dbh'} = undef;
     }
+}
+
+
+# Present UNIX time as SQL date.
+# At the moment only Oracle and Mysql are supported. Falling back to
+# Oracle if nothing else matches
+
+sub sql_unixtime_string
+{
+    my $self = shift;
+    my $unixtime = shift;
+
+    my $ret;
+    
+    if( $self->dsn =~ /:mysql:/i )
+    {
+        $ret = 'FROM_UNIXTIME(' . $unixtime . ')';
+    }
+    else
+    {
+        $ret = 'to_date(\'' . time2str('%Y%m%d%H%M%S', $unixtime) .
+            '\',\'YYYYMMDDHH24MISS\')';
+    }
+
+    return $ret;
 }
 
 
