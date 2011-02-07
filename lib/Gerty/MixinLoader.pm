@@ -78,7 +78,7 @@ sub init_mixins
 
             $Gerty::log->debug
                 ($self->sysname . ': ' .
-                 'loaded Netconf mix-in module "' . $module . '"');
+                 'loaded mix-in module "' . $module . '"');
 
             my $handlers = &{$retr_handlers}($self);
             
