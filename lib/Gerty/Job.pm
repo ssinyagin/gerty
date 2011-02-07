@@ -520,9 +520,6 @@ sub execute
 
     foreach my $dev (@{$devices})
     {
-        my $acc = $dev->{'ACCESS_HANDLER'};
-        next unless $acc->connect();
-        
         my $action_handler = $self->load_and_execute
             ($dev, 'job.action-handler', 'new',
              {'job' => $self, 'device' => $dev});
@@ -530,9 +527,8 @@ sub execute
         if( not $action_handler )
         {
             $Gerty::log->error
-                ('Failed to initialize the command handler for device "' .
+                ('Failed to initialize the action handler for device "' .
                  $dev->{'SYSNAME'});
-            $acc->close();
             next;
         }
 
@@ -540,26 +536,50 @@ sub execute
             ($dev, 'job.output-handler', 'new',
              {'job' => $self, 'device' => $dev});
         
-        my $actions = $action_handler->supported_actions();
+        my $supported_actions = $action_handler->supported_actions();
         $Gerty::log->debug('Actions supported for ' . $dev->{'SYSNAME'} .
-                           ': ' . join(', ', @{$actions}));
-
-        my $actions_count = 0;
+                           ': ' . join(', ', @{$supported_actions}));
         
-        foreach my $action (@{$actions})
+        my @enabled_actions;
+        
+        foreach my $action (@{$supported_actions})
         {
-            if( not $self->device_attr($dev, 'do.' . $action) )
+            if( $self->device_attr($dev, 'do.' . $action) and
+                $output_handler->check_action_attributes($action) and
+                $output_handler->prepare_for_action($action) )
             {
-                next;
+                push(@enabled_actions, $action);
             }
+        }
 
-            if( not $output_handler->check_action_attributes($action) )
-            {
-                next;
-            }
+        if( scalar(@enabled_actions) == 0 )
+        {
+            $Gerty::log->warning
+                ('Did not find any action enabled for device: ' .
+                 $dev->{'SYSNAME'});
+            return;
+        }
+        
+        $Gerty::log->debug('Actions enabled for ' . $dev->{'SYSNAME'} .
+                           ': ' . join(', ', @enabled_actions));
 
-            $output_handler->prepare_for_action($action);
+        my $acc = $dev->{'ACCESS_HANDLER'};
+        if( not $acc->connect() )
+        {
+            my $result = {
+                'success' => 0,
+                'content' => 'Failed to connect to ' . $dev->{'SYSNAME'}
+            };
             
+            foreach my $action (@enabled_actions)
+            {
+                $output_handler->action_finished($action, $result);
+            }
+            return;
+        }
+        
+        foreach my $action (@enabled_actions)
+        {
             my $result = $action_handler->do_action($action);        
             if( not defined($result) )
             {
@@ -613,14 +633,6 @@ sub execute
                                       $dev->{'SYSNAME'} . '"');
                 }
             }
-            
-            $actions_count++;
-        }
-
-        if( not $actions_count )
-        {
-            $Gerty::log->warning('Did not execute any actions for device: ' .
-                                 $dev->{'SYSNAME'});
         }
 
         $Gerty::log->debug('Disconnecting from ' . $dev->{'SYSNAME'});
