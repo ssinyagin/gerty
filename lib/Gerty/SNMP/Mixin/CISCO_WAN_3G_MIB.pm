@@ -110,6 +110,15 @@ sub c3g_gsm_stats
                     $timestamped_values;
             }        
         }
+        else
+        {
+            return {'success' => 0,
+                    'content' =>
+                        'Cannot retrieve ' .
+                        'CISCO-WAN-3G-MIB::c3gGsmHistoryRssiPerMinute ' .
+                        ' from ' . $ahandler->sysname . ': ' .
+                        $session->error};
+        }
     }
 
     # CISCO-WAN-3G-MIB::c3gCurrentServiceType
@@ -138,6 +147,15 @@ sub c3g_gsm_stats
                 $result->{'c3gCurrentServiceType'}{$phy} = $srv_type;
             }        
         }
+        else
+        {
+            return {'success' => 0,
+                    'content' =>
+                        'Cannot retrieve ' .
+                        'CISCO-WAN-3G-MIB::c3gCurrentServiceType ' .
+                        ' from ' . $ahandler->sysname . ': ' .
+                        $session->error};
+        }
     }
     
     # CISCO-WAN-3G-MIB::c3gGsmCurrentBand
@@ -153,6 +171,15 @@ sub c3g_gsm_stats
                 my $phy = substr( $oid, $prefixLen );
                 $result->{'c3gGsmCurrentBand'}{$phy} = $c3gGsmBand{$val};
             }        
+        }
+        else
+        {
+            return {'success' => 0,
+                    'content' =>
+                        'Cannot retrieve ' .
+                        'CISCO-WAN-3G-MIB::c3gGsmCurrentBand ' .
+                        ' from ' . $ahandler->sysname . ': ' .
+                        $session->error};
         }
     }
     
