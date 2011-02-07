@@ -74,7 +74,8 @@ sub new
     my @mandatory_attrs;
     my @optional_attrs =
         ('snmp.port', 'snmp.domain', 'snmp.localaddr',
-         'snmp.localport', 'snmp.maxmsgsize');
+         'snmp.localport', 'snmp.maxmsgsize',
+         'snmp.checkuptime');
     
     if( $self->{'attr'}{'snmp.version'} eq 'snmpv3')
     {
@@ -194,6 +195,26 @@ sub connect
         return undef;
     }
 
+    if( $self->{'attr'}{'snmp.checkuptime'} )
+    {
+        # SNMPv2-MIB::sysUpTime.0
+        my $oid = '1.3.6.1.2.1.1.3.0';
+        my $result = $session->get_request('-varbindlist' => [$oid]);
+        if( not defined($result) )
+        {
+            $Gerty::log->error
+                ('Cannot retrieve SNMPv2-MIB::sysUpTime.0 from ' .
+                 $self->sysname . ': ' . $session->error());
+            return undef;
+        }
+        else
+        {
+            $Gerty::log->debug
+                ($self->sysname .
+                 ' responded on SNMPv2-MIB::sysUpTime.0 request');
+        }
+    }
+    
     $self->{'session'} = $session;
     return 1;
 }
