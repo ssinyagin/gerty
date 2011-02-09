@@ -76,7 +76,7 @@ sub c3g_gsm_stats
     my $ahandler = shift;
     my $action = shift;
 
-    my $session = $ahandler->device->{'ACCESS_HANDLER'}->session();
+    my $session = $ahandler->session();
 
     my $now = time();
     my $full_minute = $now - ($now % 60);

@@ -50,9 +50,70 @@ sub new
 }
 
 
+sub session
+{
+    my $self = shift;
+    return $self->device->{'ACCESS_HANDLER'}->session();
+}
 
 
+# Helper utilities common to most SNMP devices
+
+my %ifMibOID =
+    ('ifIndex' => '1.3.6.1.2.1.2.2.1.1',
+     'ifDescr' => '1.3.6.1.2.1.2.2.1.2',
+     'ifName'  => '1.3.6.1.2.1.31.1.1.1.1',
+     'ifAlias' => '1.3.6.1.2.1.31.1.1.1.18',
+    );
+     
+
+my %default_interface_params =
+    ('name' => 'ifName',
+     'description' => 'ifDescr');
+
+# retrieve interface and description
+sub get_interface_info
+{
+    my $self = shift;
+    my $ifIndex = shift;
+    my $hints = shift;
+
+    my %request_attrs;
     
+    foreach my $attr ('name', 'description')
+    {
+        my $oid_name;
+        if( defined($hints->{$attr}) )
+        {
+            $oid_name = $hints->{$attr};
+        }
+        else
+        {
+            $oid_name = default_interface_params{$attr};
+        }
+
+        $request_attrs{$ifMibOID{$oid_name} . '.' . $ifIndex} = $attr;
+    }
+
+    my $result = $self->session->get_request
+        ('-varbindlist' => [keys %request_attrs]);
+
+    if( not $result )
+    {
+        return undef;
+    }
+
+    my $ret = {};
+    
+    foreach my $oid (keys %{$result})
+    {
+        $ret->{ $request_attrs{$oid} } = $result->{$oid};
+    }
+
+    return $ret;
+}
+    
+
 
         
              
