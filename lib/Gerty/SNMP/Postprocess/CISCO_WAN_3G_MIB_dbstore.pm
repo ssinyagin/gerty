@@ -1,4 +1,4 @@
-#  Copyright (C) 2010  Stanislav Sinyagin
+#  Copyright (C) 2011  Stanislav Sinyagin
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 # Post-processing module for CISCO_WAN_3G_MIB data.
 # It stores the results in a database.
 # See for DB definitions:
+#   share/sql/CISCO_WAN_3G_MIB.mysql.sql   
 
 
 package Gerty::SNMP::Postprocess::CISCO_WAN_3G_MIB_dbstore;
