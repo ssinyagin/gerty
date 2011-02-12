@@ -89,7 +89,7 @@ sub get_interface_info
         }
         else
         {
-            $oid_name = default_interface_params{$attr};
+            $oid_name = $default_interface_params{$attr};
         }
 
         $request_attrs{$ifMibOID{$oid_name} . '.' . $ifIndex} = $attr;
