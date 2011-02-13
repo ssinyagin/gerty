@@ -58,12 +58,12 @@ sub init
     {
         # SNMPv2-MIB::sysUpTime.0
         my $oid = '1.3.6.1.2.1.1.3.0';
-        my $result = $session->get_request('-varbindlist' => [$oid]);
+        my $result = $self->session->get_request('-varbindlist' => [$oid]);
         if( not defined($result) )
         {
             $Gerty::log->error
                 ('Cannot retrieve SNMPv2-MIB::sysUpTime.0 from ' .
-                 $self->sysname . ': ' . $session->error());
+                 $self->sysname . ': ' . $self->session->error());
             return undef;
         }
         else
