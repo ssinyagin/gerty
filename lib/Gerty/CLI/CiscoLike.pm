@@ -28,28 +28,17 @@ my %supported_actions =
     ('config-backup' => 'config_backup');
 
     
-
-     
-sub new
+sub init_terminal
 {
-    my $class = shift;
-    my $options = shift;    
-    my $self = $class->SUPER::new( $options );    
-    return undef unless defined($self);
+    my $self = shift;
 
+    # Check if we have '#' or '>' prompt, and switch to enable mode if needed
+    
     my $admin_already = $self->check_admin_mode();
     if( $admin_already )
     {
         $self->{'prompt'} = $self->{'cli.admin-prompt'};
-    }
-
-    if( not $self->init_terminal() )
-    {
-        $Gerty::log->error
-            ('Failed to initialize terminal for ' . $self->sysname);
-        return undef;
-    }
-    
+    }    
     
     if( (not $admin_already) and $self->{'admin-mode'} )
     {
@@ -68,40 +57,11 @@ sub new
                 ('Failed to switch into enable mode for ' . $self->sysname);
             return undef;
         }
-
+        
         $self->{'prompt'} = $self->{'cli.admin-prompt'};
     }
-        
-    return $self;
-}
-
-
-
-sub check_admin_mode
-{
-    my $self = shift;
-
-    my $exp = $self->{'expect'};
-    my $admin_mode = 0;
     
-    $exp->send("\r");    
-    $exp->expect
-        ( $self->{'cli.timeout'},
-          ['-re', $self->{'cli.admin-prompt'}, sub {$admin_mode = 1}],
-          ['-re', $self->{'cli.user-prompt'}],          
-          ['timeout'],
-          ['eof']);
     
-    return $admin_mode;
-}
-    
-
-
-
-sub init_terminal
-{
-    my $self = shift;
-
     my @cmd;
     foreach my $item (split(/\s*,\s*/o,
                             $self->device_attr('cli.init-terminal')))
@@ -134,6 +94,23 @@ sub init_terminal
 
 
     
+sub check_admin_mode
+{
+    my $self = shift;
+
+    my $exp = $self->expect;
+    my $admin_mode = 0;
+    
+    $exp->send("\r");    
+    $exp->expect
+        ( $self->{'cli.timeout'},
+          ['-re', $self->{'cli.admin-prompt'}, sub {$admin_mode = 1}],
+          ['-re', $self->{'cli.user-prompt'}],          
+          ['timeout'],
+          ['eof']);
+    
+    return $admin_mode;
+}
 
 
 
@@ -142,7 +119,7 @@ sub set_admin_mode
     my $self = shift;
     my $epasswd = shift;
 
-    my $exp = $self->{'expect'};
+    my $exp = $self->expect;
     my $enablecmd = $self->device_attr('cli.admin-mode.command');
     my $failure;
 
@@ -197,6 +174,18 @@ sub do_action
 {
     my $self = shift;    
     my $action = shift;
+
+    if( not $self->{'terminal_initialized'} )
+    {
+        if( not $self->init_terminal() )
+        {
+            $Gerty::log->error
+                ('Failed to initialize terminal for ' . $self->sysname);
+            return undef;
+        }
+        
+        $self->{'terminal_initialized'} = 1;
+    }        
 
     if( defined($supported_actions{$action}) )
     {

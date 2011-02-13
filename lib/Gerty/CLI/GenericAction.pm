@@ -46,8 +46,6 @@ sub new
         return undef;
     }
     
-    $self->{'expect'} = $acc->expect();
-
     foreach my $attr
         ( 'admin-mode', 'cli.timeout', 'cli.user-prompt', 'cli.admin-prompt',
           'cli.comment-string', '+cli.command-actions', 'cli.error-regexp',
@@ -133,6 +131,14 @@ sub new
 
 
 
+sub expect
+{
+    my $self = shift;
+    
+    my $acc = $self->device->{'ACCESS_HANDLER'};
+    return $acc->expect();
+}
+    
 
 
 sub exec_command
@@ -140,7 +146,7 @@ sub exec_command
     my $self = shift;
     my $cmd = shift;
 
-    my $exp = $self->{'expect'};
+    my $exp = $self->expect;
     my $failure;
 
     $Gerty::log->debug('Running a command: "' . $cmd . '" on "' .
