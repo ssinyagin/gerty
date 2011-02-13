@@ -58,21 +58,32 @@ sub new
 
     $self->init_mixins('+netconf.handler-mixins');
     
+    $self->{'message-id'} = 1;
+    
+    return $self;
+}
+
+
+
+sub init
+{
+    my $self = shift;
+    
     {
         my $doc = XML::LibXML->createDocument( "1.0", "UTF-8" );
         my $root = $doc->createElement('hello');
         $doc->setDocumentElement($root);
         my $caps_node = $doc->createElement('capabilities');
         $root->appendChild($caps_node);
-
+        
         foreach my $cap (sort keys %{$self->{'netconf_client_capability'}})
         {
             my $node = $doc->createElement('capability');
             $node->appendText($cap);
             $caps_node->appendChild($node);
         }
-
-        $self->send_xml($root);
+        
+        $self->send_xml($root)
     }
 
     {
@@ -108,9 +119,7 @@ sub new
         }
     }
 
-    $self->{'message-id'} = 1;
-    
-    return $self;
+    return 1;
 }
 
 

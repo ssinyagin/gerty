@@ -28,7 +28,7 @@ my %supported_actions =
     ('config-backup' => 'config_backup');
 
     
-sub init_terminal
+sub init
 {
     my $self = shift;
 
@@ -174,18 +174,6 @@ sub do_action
 {
     my $self = shift;    
     my $action = shift;
-
-    if( not $self->{'terminal_initialized'} )
-    {
-        if( not $self->init_terminal() )
-        {
-            $Gerty::log->error
-                ('Failed to initialize terminal for ' . $self->sysname);
-            return undef;
-        }
-        
-        $self->{'terminal_initialized'} = 1;
-    }        
 
     if( defined($supported_actions{$action}) )
     {

@@ -50,6 +50,34 @@ sub new
 }
 
 
+sub init
+{
+    my $self = shift;
+    
+    if( $self->device_attr('snmp.checkuptime') )
+    {
+        # SNMPv2-MIB::sysUpTime.0
+        my $oid = '1.3.6.1.2.1.1.3.0';
+        my $result = $session->get_request('-varbindlist' => [$oid]);
+        if( not defined($result) )
+        {
+            $Gerty::log->error
+                ('Cannot retrieve SNMPv2-MIB::sysUpTime.0 from ' .
+                 $self->sysname . ': ' . $session->error());
+            return undef;
+        }
+        else
+        {
+            $Gerty::log->debug
+                ($self->sysname .
+                 ' responded on SNMPv2-MIB::sysUpTime.0 request');
+        }
+    }
+
+    return 1;
+}
+
+
 sub session
 {
     my $self = shift;

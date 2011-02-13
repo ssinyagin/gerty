@@ -131,6 +131,13 @@ sub new
 
 
 
+sub init
+{
+    my $self = shift;
+    return 1;
+}
+
+
 sub expect
 {
     my $self = shift;

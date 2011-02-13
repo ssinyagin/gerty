@@ -564,16 +564,29 @@ sub execute
                            ': ' . join(', ', @enabled_actions));
 
         my $acc = $dev->{'ACCESS_HANDLER'};
+        my $connect_failure;
+        
         if( not $acc->connect() )
         {
-            my $result = {
+            $connect_failure = {
                 'success' => 0,
                 'content' => 'Failed to connect to ' . $dev->{'SYSNAME'}
             };
-            
+        }
+        elsif( not $action_handler->init() )
+        {
+            $connect_failure = {
+                'success' => 0,
+                'content' => 'Failed to initialize connection to ' .
+                    $dev->{'SYSNAME'}
+            };
+        }
+
+        if( defined($connect_failure) )
+        {
             foreach my $action (@enabled_actions)
             {
-                $output_handler->action_finished($action, $result);
+                $output_handler->action_finished($action, $connect_failure);
             }
             return;
         }
