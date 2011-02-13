@@ -64,7 +64,8 @@ sub new
     # Fetch optional attributes
 
     foreach my $attr
-        ( 'output.default-status-path', 'output.delete-on-failure' )
+        ( 'output.default-status-path', 'output.delete-on-failure',
+          'output.suppress-content' )
     {
         $self->{$attr} = $self->device_attr($attr);
     }
@@ -168,15 +169,6 @@ sub prepare_for_action
         ($self->{'status_fname_prefix'} . $self->{'output.failure-suffix'},
          $self->{'status_fname_prefix'} . $self->{'output.success-suffix'} );
     
-    $self->{'output_fname'} =
-        $self->{'action_outpath'}{$action} . '/' .
-        $self->sysname . '.' . $action;
-    
-    if( $self->{'output.delete-on-failure'} )
-    {
-        push( @unlink_files, $self->{'output_fname'} );
-    }
-
     foreach my $fname ( @unlink_files )
     {
         if( -f $fname )
@@ -206,56 +198,73 @@ sub action_finished
 
     if( $result->{'success'} )
     {
-        my $fname = $self->{'output_fname'};
-        my $fh = new IO::File($fname, 'w');
-        if( not $fh )
-        {
-            $Gerty::log->critical
-                ('Cannot open file ' . $fname . ' for writing: ' . $!);
-            return undef;
-        }
+        my $out_fname = $self->output_filename($action);
+        if( defined($out_fname) )
+        { 
+            my $fh = new IO::File($out_fname, 'w');
+            if( not $fh )
+            {
+                $Gerty::log->critical
+                    ('Cannot open file ' . $out_fname . ' for writing: ' . $!);
+                return undef;
+            }
             
-        $fh->print($result->{'content'});
-        $fh->print("\n");
-        $fh->close();
-        $Gerty::log->info('Wrote action result to ' . $fname);
-        $result->{'filename'} = $fname;
+            $fh->print($result->{'content'});
+            $fh->print("\n");
+            $fh->close();
+            $Gerty::log->info('Wrote action result to ' . $out_fname);
+            $result->{'filename'} = $out_fname;
+        }
         
         # Create an empty success status file
         
-        $fname = $self->{'status_fname_prefix'} .
+        my $status_fname = $self->{'status_fname_prefix'} .
             $self->{'output.success-suffix'};
         
-        $fh = new IO::File($fname, 'w');
+        my $fh = new IO::File($status_fname, 'w');
         if( not $fh )
         {
             $Gerty::log->critical
                 ('Cannot open file ' .
-                 $fname . ' for writing: ' . $!);
+                 $status_fname . ' for writing: ' . $!);
             return undef;
         }
         $fh->close();
-        $Gerty::log->debug('Created success status file: ' . $fname);
+        $Gerty::log->debug('Created success status file: ' . $status_fname);
     }
     else
     {
+        if( $self->{'output.delete-on-failure'} )
+        {
+            my $out_fname = $self->output_filename($action);
+            if( defined($out_fname) and -f $out_fname )
+            {
+                if( not unlink($out_fname) )
+                {
+                    $Gerty::log->critical
+                        ('Cannot remove file ' . $out_fname . ': ' . $!);
+                    return undef;
+                }
+            }
+        }
+
         # Write the failure message into the status file
-        my $fname = $self->{'status_fname_prefix'} .
+        my $status_fname = $self->{'status_fname_prefix'} .
             $self->{'output.failure-suffix'};
         
-        my $fh = new IO::File($fname, 'w');
+        my $fh = new IO::File($status_fname, 'w');
         if( not $fh )
         {
             $Gerty::log->critical
                 ('Cannot open file ' .
-                 $fname . ' for writing: ' . $!);
+                 $status_fname . ' for writing: ' . $!);
             return undef;
         }
         
         $fh->print($result->{'content'});
         $fh->print("\n");
         $fh->close();
-        $Gerty::log->debug('Wrote failure status file: ' . $fname);
+        $Gerty::log->debug('Wrote failure status file: ' . $status_fname);
     }
 
     return 1;
@@ -263,8 +272,22 @@ sub action_finished
         
 
     
-    
+sub output_filename
+{
+    my $self = shift;
+    my $action = shift;
 
+    my $ret;
+    
+    if( not $self->{'output.suppress-content'} )
+    {
+        $ret = 
+            $self->{'action_outpath'}{$action} . '/' .
+            $self->sysname . '.' . $action;
+    }
+    
+    return $ret;
+}
     
         
         

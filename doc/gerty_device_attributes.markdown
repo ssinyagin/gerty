@@ -107,6 +107,9 @@ Optional attributes:
 * __output.delete-on-failure__ [0]: if set to true, the previous output
   file is deleted before the action starts.
 
+* __output.suppress-content__: if set to true value, the content of the action
+result is not written in the output file. This can be useful when only 
+post-processing is required.
 
    
 Gerty::CLI::DirectAccess access handler
