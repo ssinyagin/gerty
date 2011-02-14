@@ -47,18 +47,54 @@ sub register_action_processors
     my $self = shift;
     my $processors = shift;
 
-    foreach my $action (keys %{$processors})
+    while(my ($action, $handlers) = each %{$processors})
     {
         if( not defined($self->{'action_processors'}{$action}) )
         {
             $self->{'action_processors'}{$action} = [];
         }
 
-        push( @{$self->{'action_processors'}{$action}},
-              @{$processors->{$action}} );
+        push( @{$self->{'action_processors'}{$action}}, @{$handlers} );
     }
 }
     
+
+# Expects a hash reference:
+#  {'action name' => [{table=>x, sysname_column=>y, date_column=>z}, ...]}
+sub register_action_dbcleanup
+{
+    my $self = shift;
+    my $entries = shift;
+
+    while(my ($action, $tables) = each %{$entries})
+    {
+        if( not defined($self->{'action_dbcleanup'}{$action}) )
+        {
+            $self->{'action_dbcleanup'}{$action} = [];
+        }
+
+        foreach my $tabledef (@{$tables})
+        {
+            my $ok = 1;
+            foreach my $param ('table', 'sysname_column', 'date_column')
+            {
+                if( not defined($tabledef->{$param}) )
+                {
+                    $Gerty::log->critical
+                        ($param . ' is not specified in ' .
+                         'register_action_dbcleanup() for action ' . $action .
+                         ' for device ' . $self->sysname);
+                    $ok = 0;
+                }
+            }
+
+            if( $ok )
+            {
+                push( @{$self->{'action_dbcleanup'}{$action}}, $tabledef );
+            }
+        }
+    }
+}
 
 
 sub process_result
@@ -124,6 +160,49 @@ sub process_result
                 foreach my $proc (@{$self->{'action_processors'}{$action}})
                 {
                     &{$proc}($self, $action, $result, $dblink);
+                }
+
+                if( defined($self->{'action_dbcleanup'}{$action}) )
+                {
+                    # clean up old data
+                    my $keep_days =
+                        $self->device_attr($action . '.keep-days');
+                    if( not defined($keep_days) )
+                    {
+                        $keep_days =
+                            $self->device_attr($dblink->name . '.keep-days');
+                    }
+
+                    if( not defined($keep_days) )
+                    {
+                        $keep_days = 732;
+                        $Gerty::log->warn
+                            ('Neither ' . $action . '.keep-days nor ' .
+                             $dblink->name . '.keep-days are defined for ' .
+                             $self->sysname . '. Falling back to ' .
+                             $keep_days . ' days ');
+                    }
+
+                    my $upto_date = $dblink->sql_unixtime_string
+                        (time() - $keep_days*86400);
+                    
+                    foreach my $tabledef
+                        (@{$self->{'action_dbcleanup'}{$action}})
+                    {
+                        my $where =
+                            ' WHERE ' . $tabledef->{'date_column'} . '<' .
+                            $upto_date . ' AND ' .
+                            $tabledef->{'sysname_column'} . '=\'' .
+                            $self->sysname . '\'';
+                        
+                        $Gerty::log->debug
+                            ('Deleting old data from ' .
+                             $tabledef->{'table'} . $where);
+                        
+                        $dblink->dbh->do
+                            ('DELETE FROM ' . $tabledef->{'table'} . $where);
+                    }
+                    
                 }
                 $dblink->disconnect();
             }
