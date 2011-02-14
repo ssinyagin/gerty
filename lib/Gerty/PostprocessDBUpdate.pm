@@ -201,6 +201,7 @@ sub process_result
                         
                         $dblink->dbh->do
                             ('DELETE FROM ' . $tabledef->{'table'} . $where);
+                        $dblink->dbh->commit();
                     }
                     
                 }
