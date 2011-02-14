@@ -35,8 +35,17 @@ sub new
     my $self = $class->SUPER::new( $options );    
     return undef unless defined($self);
 
-    $self->register_action_processors({'hdsl_line_stats' =>
-                                           [ \&process_hdsl_line_stats ]});
+    $self->register_action_processors
+        ({'hdsl_line_stats' => [ \&process_hdsl_line_stats ]});
+    
+    $self->register_action_dbcleanup
+        ({'hdsl_line_stats' => [
+              {
+                  'table' => 'HDSL_XTUC_15MIN_COUNTERS',
+                  'sysname_column' => 'HOSTNAME',
+                  'date_column' => 'MEASURE_TS',
+              },
+              ]});
     return $self;
 }
 
