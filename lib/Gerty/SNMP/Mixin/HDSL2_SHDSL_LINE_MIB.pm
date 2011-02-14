@@ -84,6 +84,8 @@ sub hdsl_line_stats
     {
         $oids_per_request = 20;
     }
+
+    my $xtuc_only = $ahandler->device_attr('hdsl-xtuc-only');
     
     my $result = {'timestamp' => $now,
                   'hdsl_15min_counters' => {},
@@ -104,17 +106,21 @@ sub hdsl_line_stats
             {
                 my $ifIndex = substr( $oid, $prefixLen );
                 # xtuC and xtuR are always present
+                # Unless we want xtuC only, check the repeaters
                 $unit_instances{$ifIndex}{1} = 1;
-                $unit_instances{$ifIndex}{2} = 1;
-                
-                my $unitId = 3;
-                my $nRepeaters = int($val);
-                while( $nRepeaters > 0 )
+                if( not $xtuc_only )
                 {
-                    $unit_instances{$ifIndex}{$unitId} = 1;
-                    $unitId++;
-                    $nRepeaters--;
-                }                    
+                    $unit_instances{$ifIndex}{2} = 1;
+                
+                    my $unitId = 3;
+                    my $nRepeaters = int($val);
+                    while( $nRepeaters > 0 )
+                    {
+                        $unit_instances{$ifIndex}{$unitId} = 1;
+                        $unitId++;
+                        $nRepeaters--;
+                    }
+                }
             }        
         }
         else
