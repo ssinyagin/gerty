@@ -22,12 +22,11 @@
 
 package Gerty::Netconf::Postprocess::JunOSDBStore;
 
-use base qw(Gerty::HandlerBase);
+use base qw(Gerty::PostprocessDBUpdate);
 
 use strict;
 use warnings;
 
-use Date::Format;
 use Gerty::DBLink;
 
 my %action_processor =
@@ -42,62 +41,20 @@ sub new
     my $self = $class->SUPER::new( $options );    
     return undef unless defined($self);
 
+    $self->register_action_processors
+        ({'junos.get-vpls-mac-counts' => [ \&process_vpls_mac_counts ]});
+    
+    $self->register_action_dbcleanup
+        ({'junos.get-vpls-mac-counts' =>
+              [
+               {
+                   'table' => 'JNX_VPLS_MAC_COUNT_HISTORY',
+                   'sysname_column' => 'HOSTNAME',
+                   'date_column' => 'UPDATE_TS',
+               },
+               ]});
+
     return $self;
-}
-
-
-
-sub process_result
-{
-    my $self = shift;    
-    my $action = shift;
-    my $result = shift;
-
-    if( ref($action_processor{$action}) )
-    {
-        if( not $result->{'has_rawdata'} )
-        {
-            $Gerty::log->error
-                ('Action result does not contain raw data for the action ' .
-                 $action . ' for device: ' .
-                 $self->sysname);
-            return;
-        }
-        
-        if( $self->device_attr($action . '.update-db') )
-        {
-            my $dblink_name = $self->device_attr('junos.postprocess.dblink');
-            
-            if( not defined($dblink_name) )
-            {
-                $Gerty::log->error
-                    ('Missing a mandatory attribute ' .
-                     '"junos.postprocess.dblink". Skipping the ' .
-                     'prostprocessing step for the action ' .
-                     $action . ' for device: ' .
-                     $self->sysname);
-                return;
-            }
-
-            my $dblink = new Gerty::DBLink
-                ({'job' => $self->job, 'device' => $self->device,
-                  'dblink' => $dblink_name});
-            if( $dblink->connect() )
-            {
-                &{$action_processor{$action}}($self, $action,
-                                              $result, $dblink);
-                $dblink->disconnect();
-            }
-            else
-            {
-                $Gerty::log->error
-                    ('Failed to connect to the database. ' .
-                     'Skipping the prostprocessing step for the action ' .
-                     $action . ' for device: ' . $self->sysname);
-                return;
-            }
-        }
-    }
 }
 
 
@@ -111,28 +68,7 @@ sub process_vpls_mac_counts
 
     my $data = $result->{'rawdata'};
     
-    if( not defined($data) )
-    {
-        $Gerty::log->error( 'Error in action post-processing' .
-                            'Raw data is undefined in results of action "' .
-                            $action . '" for device: ' . $self->sysname );
-        return;
-    }
-
-    my $now;
-
-    # at the moment only Oracle and Mysql are supported. Falling back to
-    # oracle if nothing else matches
-    
-    if( $dblink->dsn =~ /:mysql:/i )
-    {
-        $now = 'FROM_UNIXTIME(' . time() . ')';
-    }
-    else
-    {
-        $now = 'to_date(\'' . time2str('%Y%m%d%H%M%S', time()) .
-            '\',\'YYYYMMDDHH24MISS\')';
-    }
+    my $now = $dblink->sql_unixtime_string(time());
     
     while(my ($instance, $r) = each %{$data})
     {
