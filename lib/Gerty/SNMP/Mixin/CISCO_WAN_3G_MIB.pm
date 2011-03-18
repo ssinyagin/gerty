@@ -78,8 +78,6 @@ my %entityMibOid =
      '1.3.6.1.2.1.47.1.1.1.1.8' => 'entPhysicalHardwareRev',
      '1.3.6.1.2.1.47.1.1.1.1.9' => 'entPhysicalFirmwareRev',
      '1.3.6.1.2.1.47.1.1.1.1.11' => 'entPhysicalSerialNum',
-     '1.3.6.1.2.1.47.1.1.1.1.12' => 'entPhysicalMfgName',
-     '1.3.6.1.2.1.47.1.1.1.1.13' => 'entPhysicalModelName',
     );
     
 sub c3g_gsm_stats
