@@ -70,7 +70,18 @@ my %c3gGsmBand =
      11 => 'wcdma2100',
     );
      
-
+# ENTITY-MIB oid used for 3G hardware info
+my %entityMibOid =
+    (
+     '1.3.6.1.2.1.47.1.1.1.1.2' => 'entPhysicalDescr',
+     '1.3.6.1.2.1.47.1.1.1.1.7' => 'entPhysicalName',
+     '1.3.6.1.2.1.47.1.1.1.1.8' => 'entPhysicalHardwareRev',
+     '1.3.6.1.2.1.47.1.1.1.1.9' => 'entPhysicalFirmwareRev',
+     '1.3.6.1.2.1.47.1.1.1.1.11' => 'entPhysicalSerialNum',
+     '1.3.6.1.2.1.47.1.1.1.1.12' => 'entPhysicalMfgName',
+     '1.3.6.1.2.1.47.1.1.1.1.13' => 'entPhysicalModelName',
+    );
+    
 sub c3g_gsm_stats
 {
     my $ahandler = shift;
@@ -84,7 +95,8 @@ sub c3g_gsm_stats
     my $result = {'timestamp' => $now,
                   'c3gGsmHistoryRssiPerMinute' => {},
                   'c3gCurrentServiceType' => {},
-                  'c3gGsmCurrentBand' => {}};
+                  'c3gGsmCurrentBand' => {},
+                  'c3g_HardwareInfo' => {}};
     
     # CISCO-WAN-3G-MIB::c3gGsmHistoryRssiPerMinute
     {
@@ -183,9 +195,46 @@ sub c3g_gsm_stats
         }
     }
     
+    # Collect hardware and firmware information from ENTITY-MIB
+
+    foreach my $phy (keys %{$result->{'c3gGsmCurrentBand'}})
+    {
+        my $oids = [];
+        foreach my $base (sort keys %entityMibOid)
+        {
+            push(@{$oids}, $base . '.' . $phy);            
+        }
+        my $snmpresult = $session->get_request( -varbindlist => $oids );
+        if( defined($snmpresult) )
+        {
+            while( my ($oid, $value) = each %{$snmpresult} )
+            {
+                my $prefix = $oid;
+                $prefix =~ s/\.\d+$//o;
+                my $attr = $entityMibOid{$prefix};
+                if( defined($attr) )
+                {
+                    $result->{'c3g_HardwareInfo'}{$phy}{$attr} = $value;
+                }
+                else
+                {
+                    $Gerty::log->error
+                        ('CISCO_WAN_3G_MIB: received unexpected OID: ' . $oid);
+                }
+            }
+        }
+        else
+        {
+            return {'success' => 0,
+                    'content' =>
+                        'Cannot retrieve ENTITY-MIB variables ' .
+                        ' from ' . $ahandler->sysname . ': ' .
+                        $session->error};
+        }
+    }
     
     my $json = new JSON;
-    $json->pretty(1);
+    # $json->pretty(1);
 
     return {
         'success' => 1,
