@@ -57,6 +57,8 @@ sub process_c3g_gsm_stats
     {
         return;
     }
+
+    my $timestamp_str = $dblink->sql_unixtime_string($data->{'timestamp'});
     
     foreach my $phy (keys %{$data->{'c3gGsmCurrentBand'}})
     {
@@ -67,7 +69,7 @@ sub process_c3g_gsm_stats
                  ' (HOSTNAME, PHY_IDX, MEASURE_TS, ' .
                  '  GSM_SRV_TYPE, GSM_BAND) ' .
                  'VALUES(\'' . $self->sysname . '\', ' . $phy . ', ' .
-                 $dblink->sql_unixtime_string($data->{'timestamp'}) . ',' .
+                 $timestamp_str . ',' .
                  '\'' . $data->{'c3gCurrentServiceType'}{$phy} . '\', ' .
                  '\'' . $data->{'c3gGsmCurrentBand'}{$phy} . '\')');
         }
@@ -128,7 +130,7 @@ sub process_c3g_gsm_stats
         my $need_new_entry = 0;
         
         my $r = $dblink->dbh->selectrow_arrayref
-            ('SELECT MAX(UPDATE_TS) ' .
+            ('SELECT MAX(BEGIN_TS) ' .
              'FROM C3G_HARDWAREINFO ' .
              'WHERE HOSTNAME=\'' . $self->sysname . '\' AND ' .
              ' PHY_IDX=' . $phy);
@@ -143,7 +145,7 @@ sub process_c3g_gsm_stats
                  'FROM C3G_HARDWAREINFO ' .
                  'WHERE HOSTNAME=\'' . $self->sysname . '\' AND ' .
                  ' PHY_IDX=' . $phy . ' AND ' .
-                 'UPDATE_TS=\'' . $r->[0] . '\'');
+                 'BEGIN_TS=\'' . $r->[0] . '\'');
             if( $r1->[0] ne $hwinfo_md5 )
             {
                 $need_new_entry = 1;
@@ -154,11 +156,20 @@ sub process_c3g_gsm_stats
         {
             $dblink->dbh->do
                 ('INSERT INTO C3G_HARDWAREINFO ' .
-                 ' (HOSTNAME, PHY_IDX, UPDATE_TS, MD5HASH, HW_JSON) ' .
+                 ' (HOSTNAME, PHY_IDX, BEGIN_TS, END_TS, MD5HASH, HW_JSON) ' .
                  'VALUES(\'' . $self->sysname . '\', ' .
                  $phy . ', ' .
-                 $dblink->sql_unixtime_string($data->{'timestamp'}) . ',' .
+                 $timestamp_str . ', ' . $timestamp_str . ', ' .
                  '\'' . $hwinfo_md5 . '\', \'' . $hwinfo_json_str . '\')');
+        }
+        else
+        {
+            $dblink->dbh->do
+                ('UPDATE C3G_HARDWAREINFO ' .
+                 'SET END_TS=' . $timestamp_str . ' ' .
+                 'WHERE HOSTNAME=\'' . $self->sysname . '\' AND ' .
+                 ' PHY_IDX=' . $phy . ' AND ' .
+                 'BEGIN_TS=\'' . $r->[0] . '\'');
         }
         
         $dblink->dbh->commit();
