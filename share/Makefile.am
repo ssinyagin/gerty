@@ -22,7 +22,7 @@ install-data-local:
 	find * -type d -print >list.tmp
 	for d in `cat list.tmp`; do \
 	  $(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$d; done
-	find * \( -name '*.ini' \) -type f -print >list.tmp
+	find * \( -name '*.ini' -o -name '*.sql' \) -type f -print >list.tmp
 	for f in `cat list.tmp`; do \
 	  $(INSTALL_DATA) $$f $(DESTDIR)$(pkgdatadir)/$$f; done
 	rm -f list.tmp
