@@ -1,4 +1,4 @@
-#  Copyright (C) 2010  Stanislav Sinyagin
+#  Copyright (C) 2010-2011  Stanislav Sinyagin
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 #
 
 
-AC_INIT([gerty],[1.0.0],[ssinyagin@k-open.com])
+AC_INIT([gerty],[1.01dev],[ssinyagin@k-open.com])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR(conftools)
 AC_CANONICAL_HOST
