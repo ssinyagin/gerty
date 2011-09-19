@@ -24,12 +24,6 @@ EXTRA_DIST = \
 noinst_SCRIPTS = \
 	setup_tools/substvars.sh
 
-DISTCLEANFILES = $(VARSAVE)
-
-instvarsdir = $(plugindir)
-nodist_instvars_DATA = $(VARSAVE)
-
-
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(plugindir)
 

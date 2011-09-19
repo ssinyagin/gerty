@@ -10,5 +10,4 @@ config.status
 configure
 configure.lineno
 gerty-*.tar.gz
-setup_tools/install_variables
 setup_tools/substvars.sh

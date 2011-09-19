@@ -100,24 +100,4 @@ AC_CONFIG_FILES([setup_tools/substvars.sh],[chmod +x setup_tools/substvars.sh])
 
 AC_SUBST(VERSION)
 
-# save the configuration variables, so that plugin installers re-use them
-VARSAVE=setup_tools/install_variables
-echo creating $VARSAVE
-${RM} -f $VARSAVE
-for VAR in ${ac_subst_vars}; do
-    case ${VAR} in
-      DEFS | PACKAGE* | INSTALL* | VERSION | ACLOCAL | AUTO* | MAKEINFO |\
-      install_sh | AM* | am* | ac* | ECHO* | build* | host* | target* |\
-      CYG* | PATH_SEPARATOR | AWK | STRIP | mkdir* |\
-      perllibdirs )
-      ;;
-      *)
-        eval 'VAL=${'$VAR'}'
-        echo ${VAR}=\'${VAL}\' >>$VARSAVE
-      ;;
-    esac
-done
-
-AC_SUBST(VARSAVE)
-
 AC_OUTPUT

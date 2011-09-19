@@ -25,9 +25,7 @@ use Getopt::Long;
 use Log::Handler;
 
 # command-line comands. This array can be extended by plugins
-@Gerty::cli_loadmodules =
-    ('run',
-     'install_plugin');
+@Gerty::cli_loadmodules = ('run');
 
 # each command line execution module should register itself here
 %Gerty::cmd_registry = ();
