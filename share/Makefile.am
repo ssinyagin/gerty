@@ -19,27 +19,28 @@
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
-	find * -type d -print >list.tmp
+	$(FIND) * -type d -print >list.tmp
 	for d in `cat list.tmp`; do \
 	  $(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$d; done
-	find * \( -name '*.ini' -o -name '*.sql' \) -type f -print >list.tmp
+	$(FIND) * \( -name '*.ini' -o -name '*.sql' \) -type f -print >list.tmp
 	for f in `cat list.tmp`; do \
 	  $(INSTALL_DATA) $$f $(DESTDIR)$(pkgdatadir)/$$f; done
-	rm -f list.tmp
+	$(RM) -f list.tmp
 
 
 uninstall-local:
-	find * -type d -print >list.tmp
+	$(FIND) * -depth -type d -print >list.tmp
 	for d in `cat list.tmp`; do \
-	  rm -r $(DESTDIR)$(pkgdatadir)/$$d; done
-	rm -f list.tmp
+	  $(RM) -r $(DESTDIR)$(pkgdatadir)/$$d; \
+	done
+	$(RM) -f list.tmp
 
 
 dist-hook:
-	find * -type d -print >list.tmp
+	$(FIND) * -type d -print >list.tmp
 	for d in `cat list.tmp`; do \
 	  mkdir $(distdir)/$$d; done
-	find * \( -name '*.ini' \) -type f -print >list.tmp
+	$(FIND) * \( -name '*.ini' \) -type f -print >list.tmp
 	for f in `cat list.tmp`; do \
 	  cp $$f $(distdir)/$$f; done
-	rm -f list.tmp
+	$(RM) -f list.tmp

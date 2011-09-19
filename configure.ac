@@ -26,6 +26,8 @@ AM_INIT_AUTOMAKE(1.9)
 AC_PATH_PROG(PERL, perl, no)
 AC_PATH_PROG(SED, sed, no)
 AC_PATH_PROG(RM, rm, no)
+AC_PATH_PROG(RMDIR, rmdir, no)
+AC_PATH_PROG(FIND, find, no)
 AC_PATH_PROG(TELNET, telnet, no)
 AC_PATH_PROG(SSH, ssh, no)
 
@@ -76,13 +78,13 @@ AC_ARG_VAR(mansec_misc, [[7] Miscellaneous man section])
 if test -z "$mansec_misc"; then
    mansec_misc='7'; fi
 
-AC_ARG_VAR(perllibdir,  [[LIBDIR/gerty/perl] Gerty Perl libraries])
+AC_ARG_VAR(perllibdir,  [[LIBDIR/PACKAGE/perl] Gerty Perl libraries])
 if test -z "$perllibdir"; then
-   perllibdir='${libdir}/gerty/perl'; fi
+   perllibdir='${libdir}/${PACKAGE}/perl'; fi
 
-AC_ARG_VAR(pkgdatadir, [[DATADIR/gerty] Gerty data directory])
+AC_ARG_VAR(pkgdatadir, [[DATADIR/PACKAGE] Gerty data directory])
 if test -z "$pkgdatadir"; then
-   pkgdatadir='${datadir}/gerty'; fi
+   pkgdatadir='${datadir}/${PACKAGE}'; fi
 
 AC_ARG_VAR(plugconfdir, [[PKGDATADIR/plugconf] Plugin configuration directory])
 if test -z "$plugconfdir"; then

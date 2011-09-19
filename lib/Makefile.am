@@ -19,29 +19,29 @@
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(perllibdir)
-	find * -type d -print >list.tmp
+	$(FIND) * -type d -print >list.tmp
 	for d in `cat list.tmp`; do \
 	  $(mkinstalldirs) $(DESTDIR)$(perllibdir)/$$d; done
-	find * \( -name '*.pm' \) -type f -print >list.tmp
+	$(FIND) * \( -name '*.pm' \) -type f -print >list.tmp
 	for f in `cat list.tmp`; do \
 	  $(INSTALL_DATA) $$f $(DESTDIR)$(perllibdir)/$$f; done
-	rm -f list.tmp
+	$(RM) -f list.tmp
 
 
 uninstall-local:
-	find * -depth -type d -print >list.tmp
+	$(FIND) * -depth -type d -print >list.tmp
 	for d in `cat list.tmp`; do \
-	  rm -f $(DESTDIR)$(perllibdir)/$$d/*.pm; \
-	  rmdir $(DESTDIR)$(perllibdir)/$$d; \
+	  $(RM) -f $(DESTDIR)$(perllibdir)/$$d/*.pm; \
+	  $(RMDIR) $(DESTDIR)$(perllibdir)/$$d; \
 	done
-	rm -f list.tmp
+	$(RM) -f list.tmp
 
 
 dist-hook:
-	find * -type d -print >list.tmp
+	$(FIND) * -type d -print >list.tmp
 	for d in `cat list.tmp`; do \
 	  mkdir $(distdir)/$$d; done
-	find * \( -name '*.pm' \) -type f -print >list.tmp
+	$(FIND) * \( -name '*.pm' \) -type f -print >list.tmp
 	for f in `cat list.tmp`; do \
 	  cp $$f $(distdir)/$$f; done
-	rm -f list.tmp
+	$(RM) -f list.tmp
