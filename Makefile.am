@@ -21,9 +21,6 @@ SUBDIRS = . bin lib share
 EXTRA_DIST = \
 	setup_tools/Bundle/Gerty.pm
 
-noinst_SCRIPTS = \
-	setup_tools/substvars.sh
-
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(plugconfdir)
 

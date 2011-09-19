@@ -97,7 +97,6 @@ if test -z "$devclassdir"; then
    
 AC_CONFIG_FILES([Makefile bin/Makefile])
 AC_CONFIG_FILES([lib/Makefile share/Makefile])
-                                    
 AC_CONFIG_FILES([setup_tools/substvars.sh],[chmod +x setup_tools/substvars.sh])
 
 AC_SUBST(VERSION)
