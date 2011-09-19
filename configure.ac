@@ -84,9 +84,9 @@ AC_ARG_VAR(pkgdatadir, [[DATADIR/gerty] Gerty data directory])
 if test -z "$pkgdatadir"; then
    pkgdatadir='${datadir}/gerty'; fi
 
-AC_ARG_VAR(plugindir, [[PKGDATADIR/plugins] Plugin configuration directory])
-if test -z "$plugindir"; then
-   plugindir='${pkgdatadir}/plugins'; fi
+AC_ARG_VAR(plugconfdir, [[PKGDATADIR/plugconf] Plugin configuration directory])
+if test -z "$plugconfdir"; then
+   plugconfdir='${pkgdatadir}/plugconf'; fi
 
 AC_ARG_VAR(devclassdir, [[PKGDATADIR/devclasses] Device classes directory])
 if test -z "$devclassdir"; then

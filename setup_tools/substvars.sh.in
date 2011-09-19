@@ -40,7 +40,7 @@ pkgdatadir=@pkgdatadir@
     -e "s,\@perllibdir\@,${perllibdir},g" \
     -e "s,\@perllibdirs\@,@perllibdirs@,g" \
     -e "s,\@pkgdatadir\@,@pkgdatadir@,g" \
-    -e "s,\@plugindir\@,@plugindir@,g" \
+    -e "s,\@plugconfdir\@,@plugconfdir@,g" \
     -e "s,\@devclassdir\@,@devclassdir@,g" \
     $1
 

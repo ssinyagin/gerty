@@ -48,7 +48,7 @@ $Gerty::external_executables{'telnet'} = '@TELNET@';
 
 # Read plugin configurations
 {
-    my $dir = '@plugindir@';
+    my $dir = '@plugconfdir@';
     opendir(CFGDIR, $dir) or die("Cannot open directory $dir: $!");
     my @files = grep { /\.init\.pl$/ } readdir(CFGDIR);
     closedir( CFGDIR );

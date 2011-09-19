@@ -25,7 +25,7 @@ noinst_SCRIPTS = \
 	setup_tools/substvars.sh
 
 install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(plugindir)
+	$(mkinstalldirs) $(DESTDIR)$(plugconfdir)
 
 
 dist-hook:
