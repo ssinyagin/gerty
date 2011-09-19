@@ -29,9 +29,11 @@ install-data-local:
 
 
 uninstall-local:
-	find * -type d -print >list.tmp
+	find * -depth -type d -print >list.tmp
 	for d in `cat list.tmp`; do \
-	  rm -r $(DESTDIR)$(perllibdir)/$$d; done
+	  rm -f $(DESTDIR)$(perllibdir)/$$d/*.pm; \
+	  rmdir $(DESTDIR)$(perllibdir)/$$d; \
+	done
 	rm -f list.tmp
 
 
