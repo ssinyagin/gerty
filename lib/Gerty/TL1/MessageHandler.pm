@@ -238,12 +238,12 @@ sub tl1_command
     if( $Gerty::debug_level >= 2 )
     {
         $Gerty::log->debug
-            ($self->sysname . ': sending TL1 command: ' . $msg . "\n");
+            ($self->sysname . ': sending TL1 command: ' . $msg);
     }
 
     my $exp = $self->expect;
 
-    $exp->send($msg . "\n");
+    $exp->send($msg);
     $exp->print_log_file($msg . "\n");
 
     my $reply_received = 0;
