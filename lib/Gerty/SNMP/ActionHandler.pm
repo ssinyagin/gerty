@@ -34,7 +34,7 @@ sub new
 
     foreach my $method ('session')
     {
-        if( not $acc->has($method) )
+        if( not $acc->can($method) )
         {
             $Gerty::log->critical
                 ('The access handler for device "' .

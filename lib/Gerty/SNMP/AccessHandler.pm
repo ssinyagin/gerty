@@ -27,9 +27,6 @@ use warnings;
 
 use Net::SNMP;
 
-my %has =
-    ('session' => 1);
-
 my %valid_snmp_version =
     ('snmpv1' =>1,
      'snmpv2c' => 1,
@@ -207,15 +204,6 @@ sub close
     $self->{'session'} = undef;
 }
     
-
-
-
-sub has
-{
-    my $self = shift;
-    my $what = shift;
-    return $has{$what};
-}
 
 
 sub session {shift->{'session'}};

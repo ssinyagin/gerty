@@ -26,9 +26,6 @@ use Expect qw(exp_continue);
 use Date::Format;
 
 
-my %has =
-    ('expect' => 1);
-
 
 my %known_access_methods =
     ('ssh' => 1,
@@ -121,15 +118,6 @@ sub new
 
     return $self;
 }
-
-
-sub has
-{
-    my $self = shift;
-    my $what = shift;
-    return $has{$what};
-}
-    
 
 
 

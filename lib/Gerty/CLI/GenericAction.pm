@@ -37,7 +37,7 @@ sub new
     return undef unless defined($self);
 
     my $acc = $self->device->{'ACCESS_HANDLER'};
-    if( not $acc->has('expect') )
+    if( not $acc->can('expect') )
     {
         $Gerty::log->critical
             ('The access handler for device "' .

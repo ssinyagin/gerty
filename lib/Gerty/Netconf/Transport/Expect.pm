@@ -28,10 +28,6 @@ use Date::Format;
 
 
 
-my %has =
-    ('send_netconf_message'    => 1,
-     'receive_netconf_message' => 1);
-
 
 sub new
 {
@@ -84,14 +80,6 @@ sub close
     }
 }
 
-
-
-sub has
-{
-    my $self = shift;
-    my $what = shift;
-    return $has{$what};
-}
     
 
 
