@@ -89,7 +89,7 @@ sub connect
 {
     my $self = shift;
 
-    my $exp = $self->open_expect();
+    my $exp = $self->_open_expect();
     
     my $ipaddr = $self->device->{'ADDRESS'};
     

@@ -85,7 +85,7 @@ sub close
 
 
 # Creates an Expect object and initializes logging
-sub open_expect
+sub _open_expect
 {
     my $self = shift;
 
