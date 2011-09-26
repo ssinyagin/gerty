@@ -14,6 +14,7 @@
 #  along with this program; if not, write to the Free Software
 
 # RDBMS interface for property history database
+# The module can be used directly as a post-processing handler
 
 # Each property is identified by the following set of strings:
 #
@@ -29,7 +30,7 @@ use base qw(Gerty::HandlerBase);
 use strict;
 use warnings;
 
-use DBI;
+use Gerty::DBLink;
 use Date::Format;
 
     
@@ -39,22 +40,20 @@ sub new
     my $options = shift;
     my $self = $class->SUPER::new( $options );    
     return undef unless defined($self);
-
-    # a Gerty::DBLink object is expected
-    if( not defined $options->{'dblink'} )
-    {
-        $Gerty::log->critical
-            ('"dblink" is not provided to Gerty::PropHistory->new() ' .
-             'for device: ' . $self->sysname);
-        return undef;
-    }
-
-    $self->{'dblink'} = $options->{'dblink'};
                     
     return $self;
 }
 
-sub dbh {return shift->{'dblink'}->{'dbh'}}
+
+sub set_dblink
+{
+    my $self = shift;
+    my $dblink = shift;
+    $self->{'dblink'} = $dblink;
+}
+
+sub clear_dblink {delete shift->{'dblink'}}    
+sub dbh {return shift->{'dblink'}->dbh()}
 
 
 # Set a property
@@ -111,7 +110,7 @@ sub set_property
         {
             $dbh->do
                 ('UPDATE PROP_HISTORY ' .
-                 'SET ARCHIVED_TS=' . $now .
+                 'SET ARCHIVED_TS=' . $now . ' ' .
                  'WHERE ' .
                  $where_cond . ' AND ARCHIVED_TS IS NULL');
         }
@@ -173,9 +172,10 @@ sub delete_property
     
     if( defined($rh) )
     {
+        my $now = $self->{'dblink'}->sql_unixtime_string(time());
         $dbh->do
             ('UPDATE PROP_HISTORY ' .
-             'SET ARCHIVED_TS=' . $now .
+             'SET ARCHIVED_TS=' . $now . ' ' .
              'WHERE ' .
              $where_cond . ' AND ARCHIVED_TS IS NULL');
 
@@ -183,7 +183,7 @@ sub delete_property
         # values entry exists as well
 
         $dbh->do
-            ('DELETE FROM PROP_VALUES' .
+            ('DELETE FROM PROP_VALUES ' .
              'WHERE ' . $where_cond);
     }
     
@@ -266,7 +266,168 @@ sub delete_aid
     }
 }
 
-             
+
+# Post-processing handler. Take the raw data and interpret it as a
+# category->aid->property hash
+
+sub process_result
+{
+    my $self = shift;    
+    my $action = shift;
+    my $result = shift;
+
+    if( not $result->{'has_rawdata'} )
+    {
+        $Gerty::log->error
+            ('Action result does not contain raw data for the action ' .
+             $action . ' for device: ' .
+             $self->sysname);
+        return;
+    }
+        
+    if( not defined($result->{'rawdata'}) )
+    {
+        $Gerty::log->error
+            ('Error in action post-processing' .
+             'Raw data is undefined in results of action "' .
+             $action . '" for device: ' . $self->sysname );
+        return;
+    }    
+
+    if( $self->device_attr($action . '.update-props') )
+    {
+        my $dblink_attr = $action . '.postprocess.dblink';
+        my $dblink_name = $self->device_attr($dblink_attr);
+        
+        if( not defined($dblink_name) )
+        {
+            $Gerty::log->error
+                ('Missing the attribute "' . $dblink_attr .
+                 '" required for postprocessing. Skipping the ' .
+                 'prostprocessing step for the action ' .
+                 $action . ' for device: ' .
+                 $self->sysname);
+            return;
+        }
+            
+        $Gerty::log->debug('Initializing DBLink named "' . $dblink_name .
+                           '" required for action postprocessing ' .
+                           'for the action "' . $action);
+        
+        my $dblink = new Gerty::DBLink
+            ({'job' => $self->job, 'device' => $self->device,
+              'dblink' => $dblink_name});
+        if( not defined($dblink) )
+        {
+            $Gerty::log->error
+                ('Failed to initialize database connection. ' .
+                 'Skipping the prostprocessing step for the action ' .
+                 $action . ' for device: ' . $self->sysname);
+            return;
+        }
+        
+        if( $dblink->connect() )
+        {
+            $self->set_dblink($dblink);
+            
+            my $devgroups =
+                $self->device_attr('prophistory.device-groups');
+            if( defined($devgroups) )
+            {
+                # set the device group membership
+                my $category = 'device_group';
+                my %member;
+                foreach my $group (split(/\s*,\s*/, $devgroups))
+                {
+                    $member{$group} = 1;
+                    
+                    $self->set_property
+                        ({'category' => $category,
+                          'aid'      => $group,
+                          'property' => 'member',
+                          'value'    => 1});
+                }
+
+                # clean up the properties if the device is removed from groups
+                my $aids =
+                    $self->get_all_aid_names({'category' =>  $category});
+                foreach my $aid (@{$aids})
+                {
+                    if( not $member{$aid} )
+                    {
+                        $self->delete_aid
+                            ({'category' => $category,
+                              'aid'      => $aid});
+                    }
+                }
+            }
+
+            while( my ($category, $cat_data) = each %{$result->{'rawdata'}} )
+            {
+                # Update properties from raw data
+                foreach my $aid ( keys %{$cat_data} )
+                {
+                    foreach my $prop ( keys %{$cat_data->{$aid}} )
+                    {
+                        $self->set_property
+                            ({'category' => $category,
+                              'aid'      => $aid,
+                              'property' => $prop,
+                              'value'    => $cat_data->{$aid}{$prop}});
+                    }
+
+                    # Delete properties which are no longer in the raw data
+                    my $props = $self->get_all_property_names
+                        ({'category' => $category,
+                          'aid'      => $aid});
+                    foreach my $prop (@{$props})
+                    {
+                        if( not defined($cat_data->{$aid}{$prop}) )
+                        {
+                            $self->delete_property
+                                ({'category' => $category,
+                                  'aid'      => $aid,
+                                  'property' => $prop});
+                        }
+                    }
+                }
+
+                # Delete AIDs which are no longer in raw data
+                my $aids =
+                    $self->get_all_aid_names({'category' =>  $category});
+                foreach my $aid (@{$aids})
+                {
+                    if( not defined($cat_data->{$aid}) )
+                    {
+                        $self->delete_aid
+                            ({'category' => $category,
+                              'aid'      => $aid});
+                    }
+                }
+            }
+            
+            $dblink->disconnect();
+            $self->clear_dblink();
+        }
+        else
+        {
+            $self->clear_dblink();
+            $Gerty::log->error
+                ('Failed to connect to the database. ' .
+                 'Skipping the prostprocessing step for the action ' .
+                 $action . ' for device: ' . $self->sysname);
+                return;
+        }
+    }
+    else
+    {
+        $Gerty::log->warn
+            ('Action "' . $action . '" specifies a postprocessing ' .
+             'handler, but the attribute "' . $action . '.update-props" ' .
+             'is not set to a true value');
+    }
+}
+
 1;
 
 
