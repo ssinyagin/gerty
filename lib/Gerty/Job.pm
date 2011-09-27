@@ -557,7 +557,7 @@ sub execute
             $Gerty::log->warning
                 ('Did not find any action enabled for device: ' .
                  $dev->{'SYSNAME'});
-            return;
+            next;
         }
         
         $Gerty::log->debug('Actions enabled for ' . $dev->{'SYSNAME'} .
@@ -588,7 +588,7 @@ sub execute
             {
                 $output_handler->action_finished($action, $connect_failure);
             }
-            return;
+            next;
         }
         
         foreach my $action (@enabled_actions)
