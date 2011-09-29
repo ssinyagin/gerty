@@ -59,17 +59,13 @@ http://chilli.nosignal.org/mailman/listinfo/gerty-users
 TO DO
 -----
 
-* finalize Gerty::CLI::Mixin::Cisco7600
-* ping-before-telnet
-* DBI handler for DeviceList
-* blank out passwords
+* replace external SSH and Telnet programs with Net::SSH2 and Net::Telnet
 * write a man page
 * automate backup for Cisco files, like "vlan.dat"
    (suggested by Viktor Steinmann <stony@stony.com>)
 * write "Gerty Developer Guide"
-* update documentation on Netconf and SNMP
+* update documentation on Netconf, SNMP, TL1
 * update documentation on DBLink and action postprocessing
-* SQL database clean-up
 
 
 
