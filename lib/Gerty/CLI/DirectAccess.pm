@@ -139,6 +139,8 @@ sub connect
         my @exec_args =
             ($Gerty::external_executables{'ssh'},
              '-o', 'NumberOfPasswordPrompts=1',
+             '-o', 'UserKnownHostsFile=/dev/null',
+             '-o', 'StrictHostKeyChecking=no',
              '-p', $self->{'attr'}{'cli.ssh-port'},
              '-l', $self->{'attr'}{'cli.auth-username'},
              $ipaddr);
