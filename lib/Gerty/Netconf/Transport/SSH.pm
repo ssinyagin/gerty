@@ -98,7 +98,9 @@ sub connect
     my @exec_args =
         ($Gerty::external_executables{'ssh'},
          '-p', $self->{'attr'}{'netconf.ssh-port'},
-         '-l', $self->{'attr'}{'netconf.auth-username'});
+         '-l', $self->{'attr'}{'netconf.auth-username'},
+         '-o', 'UserKnownHostsFile=/dev/null',
+         '-o', 'StrictHostKeyChecking=no');
 
     if( $self->{'attr'}{'netconf.ssh-use-password'} )
     {
