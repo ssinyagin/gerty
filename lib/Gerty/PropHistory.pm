@@ -67,6 +67,11 @@ sub set_property
 
     my $dbh = $self->dbh;
 
+    # Chop off leading and trailing space
+    my $value = $args->{'value'};
+    $value =~ s/^\s+//o;
+    $value =~ s/\s+$//o;
+    
     my $where_cond =
         ' DEVICE_SYSNAME=\'' . $self->sysname . '\' AND ' .
         ' PROP_CATEGORY=\'' . $args->{'category'} . '\' AND ' .
@@ -80,7 +85,7 @@ sub set_property
          'FROM PROP_VALUES ' .
          'WHERE ' . $where_cond);
 
-    if( defined($rv) and ($rv->[0] eq $args->{'value'}) )
+    if( defined($rv) and ($rv->[0] eq $value) )
     {
         # the value has not changed, do nothing
         $dbh->commit();
@@ -93,7 +98,7 @@ sub set_property
         '\'' . $args->{'category'} . '\',' .
         '\'' . $args->{'aid'} . '\',' .
         '\'' . $args->{'property'} . '\',' .
-        '\'' . $args->{'value'} . '\',' .
+        '\'' . $value . '\',' .
         $now;
     
     if( defined($rv) )
@@ -118,7 +123,7 @@ sub set_property
         $dbh->do
             ('UPDATE PROP_VALUES ' .
              'SET ' .
-             ' PROP_VALUE=\'' . $args->{'value'} . '\', ' .
+             ' PROP_VALUE=\'' . $value . '\', ' .
              ' MODIFIED_TS=' . $now . ' ' .
              'WHERE ' . $where_cond);
     }
