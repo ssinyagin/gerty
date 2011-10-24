@@ -83,10 +83,11 @@ later on, "git pull" would refresh your copy with the latest updates
 Ubuntu and Debian pre-requisites:
 ---------------------------------
 
-apt-get install libtool autoconf git-core \
+apt-get install make libtool autoconf git-core \
   libconfig-tiny-perl libconfig-any-perl  \
   liblog-handler-perl libexpect-perl \
-  libxml-libxml-perl libnet-snmp-perl
+  libxml-libxml-perl libnet-snmp-perl \
+  libdbi-perl
 
 
 
