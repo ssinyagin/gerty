@@ -374,11 +374,14 @@ sub process_result
                 {
                     foreach my $prop ( keys %{$cat_data->{$aid}} )
                     {
-                        $self->set_property
-                            ({'category' => $category,
-                              'aid'      => $aid,
-                              'property' => $prop,
-                              'value'    => $cat_data->{$aid}{$prop}});
+                        if( defined($cat_data->{$aid}{$prop}) )
+                        {
+                            $self->set_property
+                                ({'category' => $category,
+                                  'aid'      => $aid,
+                                  'property' => $prop,
+                                  'value'    => $cat_data->{$aid}{$prop}});
+                        }
                     }
 
                     # Delete properties which are no longer in the raw data
