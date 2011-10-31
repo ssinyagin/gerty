@@ -32,7 +32,7 @@ use warnings;
 
 use Gerty::DBLink;
 use Date::Format;
-
+use Digest::MD5 qw(md5_hex);
     
 sub new
 {
@@ -50,9 +50,16 @@ sub set_dblink
     my $self = shift;
     my $dblink = shift;
     $self->{'dblink'} = $dblink;
+    $self->{'cache'} = {};
 }
 
-sub clear_dblink {delete shift->{'dblink'}}    
+sub clear_dblink
+{
+    my $self = shift;
+    delete $self->{'dblink'};
+    delete $self->{'cache'};
+}
+
 sub dbh {return shift->{'dblink'}->dbh()}
 
 
@@ -71,37 +78,53 @@ sub set_property
     my $value = $args->{'value'};
     $value =~ s/^\s+//o;
     $value =~ s/\s+$//o;
-    
-    my $where_cond =
-        ' DEVICE_SYSNAME=\'' . $self->sysname . '\' AND ' .
-        ' PROP_CATEGORY=\'' . $args->{'category'} . '\' AND ' .
-        ' AID_NAME=\'' . $args->{'aid'} . '\' AND ' .
-        ' PROP_NAME=\'' . $args->{'property'} . '\' ';
-    
-    # Check if the old value equals the new one
-    
-    my $rv = $dbh->selectrow_arrayref
-        ('SELECT PROP_VALUE ' .
-         'FROM PROP_VALUES ' .
-         'WHERE ' . $where_cond);
 
-    if( defined($rv) and ($rv->[0] eq $value) )
+    my $category = $args->{'category'};
+
+    # Check and fill the cache if needed    
+    if( not defined($self->{'cache'}{$category}) )
+    {
+        my $sth = $dbh->prepare
+            ('SELECT AID_NAME, PROP_NAME, PROP_VALUE ' .
+             'FROM PROP_VALUES ' .
+             'WHERE DEVICE_SYSNAME=? AND PROP_CATEGORY=?');
+        $sth->execute($self->sysname, $category);
+        
+        while(my $row = $sth->fetchrow_arrayref() )
+        {
+            $self->{'cache'}{$category}{$row->[0]}{$row->[1]} = $row->[2];
+        }
+    }
+        
+    my $oldval =
+        $self->{'cache'}{$category}{$args->{'aid'}}{$args->{'property'}};
+    
+    if( defined($oldval) and ($oldval eq $value) )
     {
         # the value has not changed, do nothing
         $dbh->commit();
         return;
     }
 
+    $self->{'cache'}{$category}{$args->{'aid'}}{$args->{'property'}} = $value;
+    
+    my $propid = $self->propid($args);        
+    my $where_cond = ' PROPIDMD5=\'' . $propid  . '\'';
+
+    # screen the single quotes
+    $value =~ s/\'/\\\'/go;
+    
     my $now = $self->{'dblink'}->sql_unixtime_string(time());
     my $values =
+        '\'' . $propid . '\', ' .
         '\'' . $self->sysname . '\', ' .
-        '\'' . $args->{'category'} . '\',' .
+        '\'' . $category . '\',' .
         '\'' . $args->{'aid'} . '\',' .
         '\'' . $args->{'property'} . '\',' .
         '\'' . $value . '\',' .
         $now;
     
-    if( defined($rv) )
+    if( defined($oldval) )
     {
         # find the latest history entry and update it
             
@@ -131,7 +154,8 @@ sub set_property
     {
         $dbh->do
             ('INSERT INTO PROP_VALUES ' .
-             ' (DEVICE_SYSNAME, PROP_CATEGORY, AID_NAME, PROP_NAME, ' .
+             ' (PROPIDMD5, DEVICE_SYSNAME, PROP_CATEGORY, ' .
+             '  AID_NAME, PROP_NAME, ' .
              '  PROP_VALUE, MODIFIED_TS) ' .
              'VALUES(' . $values . ')');
     }
@@ -140,7 +164,7 @@ sub set_property
     
     $dbh->do
         ('INSERT INTO PROP_HISTORY ' .
-         ' (DEVICE_SYSNAME, PROP_CATEGORY, AID_NAME, PROP_NAME, ' .
+         ' (PROPIDMD5, DEVICE_SYSNAME, PROP_CATEGORY, AID_NAME, PROP_NAME, ' .
          '  PROP_VALUE, ADDED_TS) ' .
          'VALUES(' . $values . ')');
 
@@ -160,12 +184,8 @@ sub delete_property
 
     my $dbh = $self->dbh;
 
-    my $where_cond =
-        ' DEVICE_SYSNAME=\'' . $self->sysname . '\' AND ' .
-        ' PROP_CATEGORY=\'' . $args->{'category'} . '\' AND ' .
-        ' AID_NAME=\'' . $args->{'aid'} . '\' AND ' .
-        ' PROP_NAME=\'' . $args->{'property'} . '\' ';
-
+    my $propid = $self->propid($args);        
+    my $where_cond = ' PROPIDMD5=\'' . $propid  . '\'';
 
     # find the latest history entry and update it
             
@@ -190,6 +210,10 @@ sub delete_property
         $dbh->do
             ('DELETE FROM PROP_VALUES ' .
              'WHERE ' . $where_cond);
+
+        delete
+            $self->{'cache'}{$args->{'category'}}{
+                $args->{'aid'}}{$args->{'property'}};
     }
     
     $dbh->commit();
@@ -205,20 +229,27 @@ sub get_all_aid_names
     my $self = shift;
     my $args = shift;
 
-    my $ret = [];
+    my $category = $args->{'category'};
     
+    if( defined($self->{'cache'}{$category}) )
+    {
+        return [keys %{$self->{'cache'}{$category}}];
+    }
+
+    my $ret = [];
+
     my $rows = $self->dbh->selectall_arrayref
         ('SELECT DISTINCT AID_NAME ' .
          'FROM PROP_VALUES ' .
          'WHERE ' .
          ' DEVICE_SYSNAME=\'' . $self->sysname . '\' AND ' .
-         ' PROP_CATEGORY=\'' . $args->{'category'} . '\'');
-
+         ' PROP_CATEGORY=\'' . $category . '\'');
+    
     foreach my $r (@{$rows})
     {
-        push(@{$ret}, $r->[0]);
+            push(@{$ret}, $r->[0]);
     }
-
+    
     $self->dbh->commit();    
     return $ret;
 }
@@ -233,15 +264,23 @@ sub get_all_property_names
     my $self = shift;
     my $args = shift;
 
-    my $ret = [];
+    my $category = $args->{'category'};
+    my $aid = $args->{'aid'};
     
+    if( defined($self->{'cache'}{$category}{$aid}) )
+    {
+        return [keys %{$self->{'cache'}{$category}{$aid}}];
+    }
+    
+    my $ret = [];
+            
     my $rows = $self->dbh->selectall_arrayref
         ('SELECT PROP_NAME ' .
          'FROM PROP_VALUES ' .
          'WHERE ' .
          ' DEVICE_SYSNAME=\'' . $self->sysname . '\' AND ' .
-         ' PROP_CATEGORY=\'' . $args->{'category'} . '\' AND ' .
-         ' AID_NAME=\'' . $args->{'aid'} . '\'');
+         ' PROP_CATEGORY=\'' . $category . '\' AND ' .
+         ' AID_NAME=\'' . $aid . '\'');
     
     foreach my $r (@{$rows})
     {
@@ -269,6 +308,8 @@ sub delete_aid
     {
         $self->delete_property({%{$args}, 'property' => $prop});
     }
+    
+    delete $self->{'cache'}{$args->{'category'}}{$args->{'aid'}};
 }
 
 
@@ -435,6 +476,23 @@ sub process_result
              'is not set to a true value');
     }
 }
+
+
+# Return an MD5 hash string
+# Expected a hashref with the following keys:
+# 'category', 'aid', 'property'
+
+sub propid
+{
+    my $self = shift;
+    my $args = shift;
+
+    return md5_hex($self->sysname . ':' .
+                   $args->{'category'} . ':' .
+                   $args->{'aid'} . ':' .
+                   $args->{'property'});
+}
+
 
 1;
 
