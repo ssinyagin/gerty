@@ -126,21 +126,24 @@ sub set_property
     
     if( defined($oldval) )
     {
-        # find the latest history entry and update it
-            
-        my $rh = $dbh->selectrow_arrayref
-            ('SELECT ADDED_TS ' .
-             'FROM PROP_HISTORY ' .
-             'WHERE ' .
-             $where_cond . ' AND ARCHIVED_TS IS NULL');
-        
-        if( defined($rh) )
+        if( not $args->{'nohistory'} )
         {
-            $dbh->do
-                ('UPDATE PROP_HISTORY ' .
-                 'SET ARCHIVED_TS=' . $now . ' ' .
+            # find the latest history entry and update it
+            
+            my $rh = $dbh->selectrow_arrayref
+                ('SELECT ADDED_TS ' .
+                 'FROM PROP_HISTORY ' .
                  'WHERE ' .
                  $where_cond . ' AND ARCHIVED_TS IS NULL');
+            
+            if( defined($rh) )
+            {
+                $dbh->do
+                    ('UPDATE PROP_HISTORY ' .
+                     'SET ARCHIVED_TS=' . $now . ' ' .
+                     'WHERE ' .
+                     $where_cond . ' AND ARCHIVED_TS IS NULL');
+            }
         }
         
         $dbh->do
@@ -160,14 +163,18 @@ sub set_property
              'VALUES(' . $values . ')');
     }
 
-    # start a new entry in the history table
+    if( not $args->{'nohistory'} )
+    {
+        # start a new entry in the history table
+        
+        $dbh->do
+            ('INSERT INTO PROP_HISTORY ' .
+             ' (PROPIDMD5, DEVICE_SYSNAME, PROP_CATEGORY, ' .
+             '  AID_NAME, PROP_NAME, ' .
+             '  PROP_VALUE, ADDED_TS) ' .
+             'VALUES(' . $values . ')');
+    }
     
-    $dbh->do
-        ('INSERT INTO PROP_HISTORY ' .
-         ' (PROPIDMD5, DEVICE_SYSNAME, PROP_CATEGORY, AID_NAME, PROP_NAME, ' .
-         '  PROP_VALUE, ADDED_TS) ' .
-         'VALUES(' . $values . ')');
-
     $dbh->commit();
 }
 
@@ -187,30 +194,43 @@ sub delete_property
     my $propid = $self->propid($args);        
     my $where_cond = ' PROPIDMD5=\'' . $propid  . '\'';
 
-    # find the latest history entry and update it
-            
-    my $rh = $dbh->selectrow_arrayref
-        ('SELECT ADDED_TS ' .
-         'FROM PROP_HISTORY ' .
-         'WHERE ' .
-         $where_cond . ' AND ARCHIVED_TS IS NULL');
+    my $do_delete_from_values = 0;
     
-    if( defined($rh) )
+    if( $args->{'nohistory'} )
     {
-        my $now = $self->{'dblink'}->sql_unixtime_string(time());
-        $dbh->do
-            ('UPDATE PROP_HISTORY ' .
-             'SET ARCHIVED_TS=' . $now . ' ' .
+        $do_delete_from_values = 1;
+    }
+    else
+    {
+        # find the latest history entry and update it
+        
+        my $rh = $dbh->selectrow_arrayref
+            ('SELECT ADDED_TS ' .
+             'FROM PROP_HISTORY ' .
              'WHERE ' .
              $where_cond . ' AND ARCHIVED_TS IS NULL');
+        
+        if( defined($rh) )
+        {
+            my $now = $self->{'dblink'}->sql_unixtime_string(time());
+            $dbh->do
+                ('UPDATE PROP_HISTORY ' .
+                 'SET ARCHIVED_TS=' . $now . ' ' .
+                 'WHERE ' .
+                 $where_cond . ' AND ARCHIVED_TS IS NULL');
+            
+            # there was an arcbive entry, so likely the
+            # values entry exists as well
+            $do_delete_from_values = 1;
+        }
+    }
 
-        # there was an arcbive entry, so likely the
-        # values entry exists as well
-
+    if( $do_delete_from_values )
+    {
         $dbh->do
             ('DELETE FROM PROP_VALUES ' .
              'WHERE ' . $where_cond);
-
+        
         delete
             $self->{'cache'}{$args->{'category'}}{
                 $args->{'aid'}}{$args->{'property'}};
@@ -410,18 +430,25 @@ sub process_result
 
             while( my ($category, $cat_data) = each %{$result->{'rawdata'}} )
             {
+                my $nohistory_props = $cat_data->{'.nohistory'};
+                $nohistory_props = {} unless defined($nohistory_props);
+                
                 # Update properties from raw data
                 foreach my $aid ( keys %{$cat_data} )
                 {
+                    # AID names starting with dot are metadata
+                    next if ($aid =~ /^\./o);
+                        
                     foreach my $prop ( keys %{$cat_data->{$aid}} )
                     {
                         if( defined($cat_data->{$aid}{$prop}) )
                         {
-                            $self->set_property
-                                ({'category' => $category,
-                                  'aid'      => $aid,
-                                  'property' => $prop,
-                                  'value'    => $cat_data->{$aid}{$prop}});
+                            $self->set_property({
+                                'category' => $category,
+                                'aid'      => $aid,
+                                'property' => $prop,
+                                'value'    => $cat_data->{$aid}{$prop},
+                                'nohistory' =>  $nohistory_props->{$prop}});
                         }
                     }
 
