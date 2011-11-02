@@ -102,7 +102,6 @@ sub set_property
     if( defined($oldval) and ($oldval eq $value) )
     {
         # the value has not changed, do nothing
-        $dbh->commit();
         return;
     }
 
@@ -174,8 +173,6 @@ sub set_property
              '  PROP_VALUE, ADDED_TS) ' .
              'VALUES(' . $values . ')');
     }
-    
-    $dbh->commit();
 }
 
 
@@ -235,8 +232,6 @@ sub delete_property
             $self->{'cache'}{$args->{'category'}}{
                 $args->{'aid'}}{$args->{'property'}};
     }
-    
-    $dbh->commit();
 }
     
     
@@ -270,7 +265,6 @@ sub get_all_aid_names
             push(@{$ret}, $r->[0]);
     }
     
-    $self->dbh->commit();    
     return $ret;
 }
 
@@ -307,7 +301,6 @@ sub get_all_property_names
         push(@{$ret}, $r->[0]);
     }
 
-    $self->dbh->commit();    
     return $ret;
 }
 
@@ -482,6 +475,7 @@ sub process_result
                 }
             }
             
+            $self->dbh->commit();       
             $dblink->disconnect();
             $self->clear_dblink();
         }
