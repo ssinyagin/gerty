@@ -32,7 +32,6 @@ use warnings;
 
 use Gerty::DBLink;
 use Date::Format;
-use Digest::MD5 qw(md5_hex);
     
 sub new
 {
@@ -107,15 +106,17 @@ sub set_property
 
     $self->{'cache'}{$category}{$args->{'aid'}}{$args->{'property'}} = $value;
     
-    my $propid = $self->propid($args);        
-    my $where_cond = ' PROPIDMD5=\'' . $propid  . '\'';
-
+    my $where_cond =
+        ' DEVICE_SYSNAME=\'' . $self->sysname . '\' AND ' .
+        ' PROP_CATEGORY=\'' . $args->{'category'} . '\' AND ' .
+        ' AID_NAME=\'' . $args->{'aid'} . '\' AND ' .
+        ' PROP_NAME=\'' . $args->{'property'} . '\' ';
+    
     # screen the single quotes
     $value =~ s/\'/\\\'/go;
     
     my $now = $self->{'dblink'}->sql_unixtime_string(time());
     my $values =
-        '\'' . $propid . '\', ' .
         '\'' . $self->sysname . '\', ' .
         '\'' . $category . '\',' .
         '\'' . $args->{'aid'} . '\',' .
@@ -156,7 +157,7 @@ sub set_property
     {
         $dbh->do
             ('INSERT INTO PROP_VALUES ' .
-             ' (PROPIDMD5, DEVICE_SYSNAME, PROP_CATEGORY, ' .
+             ' (DEVICE_SYSNAME, PROP_CATEGORY, ' .
              '  AID_NAME, PROP_NAME, ' .
              '  PROP_VALUE, MODIFIED_TS) ' .
              'VALUES(' . $values . ')');
@@ -168,7 +169,7 @@ sub set_property
         
         $dbh->do
             ('INSERT INTO PROP_HISTORY ' .
-             ' (PROPIDMD5, DEVICE_SYSNAME, PROP_CATEGORY, ' .
+             ' (DEVICE_SYSNAME, PROP_CATEGORY, ' .
              '  AID_NAME, PROP_NAME, ' .
              '  PROP_VALUE, ADDED_TS) ' .
              'VALUES(' . $values . ')');
@@ -188,9 +189,12 @@ sub delete_property
 
     my $dbh = $self->dbh;
 
-    my $propid = $self->propid($args);        
-    my $where_cond = ' PROPIDMD5=\'' . $propid  . '\'';
-
+    my $where_cond =
+        ' DEVICE_SYSNAME=\'' . $self->sysname . '\' AND ' .
+        ' PROP_CATEGORY=\'' . $args->{'category'} . '\' AND ' .
+        ' AID_NAME=\'' . $args->{'aid'} . '\' AND ' .
+        ' PROP_NAME=\'' . $args->{'property'} . '\' ';
+    
     my $do_delete_from_values = 0;
     
     if( $args->{'nohistory'} )
@@ -499,20 +503,6 @@ sub process_result
 }
 
 
-# Return an MD5 hash string
-# Expected a hashref with the following keys:
-# 'category', 'aid', 'property'
-
-sub propid
-{
-    my $self = shift;
-    my $args = shift;
-
-    return md5_hex($self->sysname . ':' .
-                   $args->{'category'} . ':' .
-                   $args->{'aid'} . ':' .
-                   $args->{'property'});
-}
 
 
 1;
