@@ -101,8 +101,12 @@ sub retrieve_devices
         my @row_values = @{$row->{'values'}};
         
         foreach my $field ( @fields )
-        {            
-            $dev_attr->{$field} = shift( @row_values );
+        {
+            my $val = shift( @row_values );
+            if( defined($val) and $val ne '' )
+            {
+                $dev_attr->{$field} = $val;
+            }
         }
         
         # Inherit device class from the list attribute
