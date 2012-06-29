@@ -35,6 +35,11 @@ sub init
     # Check if we have '#' or '>' prompt, and switch to enable mode if needed
     
     my $admin_already = $self->check_admin_mode();
+    if( not defined($admin_already) )
+    {
+        return undef;
+    }
+    
     if( $admin_already )
     {
         $self->{'prompt'} = $self->{'cli.admin-prompt'};
@@ -83,7 +88,8 @@ sub init
 
     foreach my $command ( @cmd )
     {
-        if( not $self->exec_command($command) )
+        my $result = $self->exec_command($command);
+        if( not $result->{'success'} )
         {
             return undef;
         }
@@ -100,15 +106,24 @@ sub check_admin_mode
 
     my $exp = $self->expect;
     my $admin_mode = 0;
+    my $failure;
     
     $exp->send("\r");    
     $exp->expect
         ( $self->{'cli.timeout'},
           ['-re', $self->{'cli.admin-prompt'}, sub {$admin_mode = 1}],
           ['-re', $self->{'cli.user-prompt'}],          
-          ['timeout'],
-          ['eof']);
-    
+          ['timeout', sub {$failure = 'Connection timeout'}],
+          ['eof', sub {$failure = 'Connection closed'}]);
+
+    if( defined($failure) )
+    {
+        $Gerty::log->error
+            ('Failed to determine if we run in admin mode for ' .
+             $self->sysname . ': ' . $failure);
+        return undef;
+    }
+
     return $admin_mode;
 }
 
