@@ -39,6 +39,14 @@ Usage examples
   SQL, with change history
 
 
+Vendor-specific plugins
+-----------------------
+
+The core Gerty package contains only vendor-independent features. All
+vendor-specific features are packaged in plugins. Vurrently plugins for
+Cisco, Juniper, and some xDSL equipment are available:
+
+https://github.com/ssinyagin/gerty-plugins 
 
 
 
@@ -101,7 +109,6 @@ http://chilli.nosignal.org/mailman/listinfo/gerty-users
 TO DO
 -----
 
-* replace external SSH and Telnet programs with Net::SSH2 and Net::Telnet
 * write a man page
 * automate backup for Cisco files, like "vlan.dat"
    (suggested by Viktor Steinmann <stony@stony.com>)
