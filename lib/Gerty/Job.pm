@@ -441,7 +441,7 @@ sub retrieve_devices
                     $sysname =~ /^[0-9a-f]+\:/oi )
                 {
                     $Gerty::log->debug
-                        ('SYSNAME' . $sysname . ' looks like IP address');
+                        ('SYSNAME ' . $sysname . ' looks like IP address');
                     $dev->{'ADDRESS'} = $sysname;
                 }
                 else
