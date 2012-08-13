@@ -97,7 +97,7 @@ subdirectories:
 
 * `logs/`: telnet logs
 
-* `nodelists/`: lists of devices fo rjob execution
+* `nodelists/`: lists of devices for job execution
 
 * `output/`: job output results (shows the old pool config and applied
 changes)
