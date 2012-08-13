@@ -53,23 +53,17 @@ https://github.com/ssinyagin/gerty-plugins
 DOCUMENTATION
 -------------
 
-See the Wiki for a short concept overview:
-http://github.com/ssinyagin/gerty/wiki
-
-
 User guide:
-http://github.com/ssinyagin/gerty/blob/master/doc/gerty_userguide.markdown
-
+doc/gerty_userguide.markdown
 
 Architecture and design:
-http://github.com/ssinyagin/gerty/blob/master/doc/gerty_architecture.markdown
-
+doc/gerty_architecture.markdown
 
 Software documentation:
-http://github.com/ssinyagin/gerty/blob/master/doc/gerty_job_configuration.markdown
-http://github.com/ssinyagin/gerty/blob/master/doc/gerty_siteconfig_configuration.markdown
-http://github.com/ssinyagin/gerty/blob/master/doc/gerty_devclass_configuration.markdown
-http://github.com/ssinyagin/gerty/blob/master/doc/gerty_device_attributes.markdown
+doc/gerty_job_configuration.markdown
+doc/gerty_siteconfig_configuration.markdown
+doc/gerty_devclass_configuration.markdown
+doc/gerty_device_attributes.markdown
 
 
 Installing from sources:
@@ -86,6 +80,13 @@ Pre-requisites: autoconf, automake, and a number of Perl modules
 
 later on, "git pull" would refresh your copy with the latest updates
 
+
+Installing documentation
+------------------------
+
+apt-get install pandoc
+sh mkhtml.sh ~/public_html/gerty/
+pandoc -s doc/gerty_manpage.markdown --to=man -o /usr/local/man/man1/gerty.1
 
 
 Ubuntu and Debian pre-requisites:
@@ -109,7 +110,6 @@ http://chilli.nosignal.org/mailman/listinfo/gerty-users
 TO DO
 -----
 
-* write a man page
 * automate backup for Cisco files, like "vlan.dat"
    (suggested by Viktor Steinmann <stony@stony.com>)
 * write "Gerty Developer Guide"
