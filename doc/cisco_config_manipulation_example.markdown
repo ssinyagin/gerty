@@ -19,8 +19,8 @@ definitely bring more errors and troubleshooting costs.
 Task description
 ----------------
 
-The compaany (firther referred to as XYZ) has more than a hundred remote
-branches, and each one iis equipped with a Cisco router acting as a
+The compaany (further referred to as XYZ) has more than a hundred remote
+branches, and each one is equipped with a Cisco router acting as a
 local DHCP server. The DHCP pool configuration contains the DNS and
 Netbios server addresses which need to be changed.
 
