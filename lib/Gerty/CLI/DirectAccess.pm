@@ -92,7 +92,8 @@ sub new
 
     foreach my $attr
         ('cli.ssh-port', 'cli.telnet-port', 'cli.log-dir', 'cli.log-enabled',
-         'cli.logfile-timeformat', 'cli.timeout', 'cli.initial-prompt')
+         'cli.logfile-timeformat', 'cli.timeout', 'cli.initial-prompt',
+         'cli.ssh-but-telnet-login')
     {
         my $val = $self->device_attr($attr);
         if( not defined($val) )           
@@ -152,7 +153,13 @@ sub connect
             return undef;
         }
 
-        if( not $self->_login_ssh($exp) )
+        if ( $self->{'attr'}{'cli.ssh-but-telnet-login'}) {
+            if( not $self->_login_telnet($exp) )
+            {
+                return undef;
+            }        
+        }
+        elsif( not $self->_login_ssh($exp) )
         {
             return undef;
         }        
