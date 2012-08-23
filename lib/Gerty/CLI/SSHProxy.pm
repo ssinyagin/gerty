@@ -142,6 +142,7 @@ sub connect
     if( $method eq 'ssh' )
     {
         $exp->send($self->{'attr'}{'sshproxy.ssh-command'} . ' ' .
+                   '-o Protocol=' . $self->{'attr'}{'cli.ssh-protocol'} . ' ' .
                    '-o NumberOfPasswordPrompts=1 ' .
                    '-o UserKnownHostsFile=/dev/null ' .
                    '-o StrictHostKeyChecking=no ' .

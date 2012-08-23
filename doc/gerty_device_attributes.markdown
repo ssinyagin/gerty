@@ -122,6 +122,10 @@ Mandatory attributes:
 * __cli.access-method__: CLI access protocol. Currently supported: `ssh`, 
 `telnet`.
 
+* __cli.ssh-protocol__ [2]: Specifies the protocol versions ssh(1) should support in order of preference.
+  The possible values are ‘1’ and ‘2’.  Multiple versions must be comma-separated.
+  When this option is set to “2,1” ssh will try version 2 and fall back to version 1 if version 2 is not available.
+
 * __cli.ssh-port__ [22], __cli.telnet-port__ [23]: TCP ports for SSH 
   and Telnet access.
 

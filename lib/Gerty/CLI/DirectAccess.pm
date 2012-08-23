@@ -91,7 +91,7 @@ sub new
     # Fetch other attributes
 
     foreach my $attr
-        ('cli.ssh-port', 'cli.telnet-port', 'cli.log-dir', 'cli.log-enabled',
+        ('cli.ssh-protocol', 'cli.ssh-port', 'cli.telnet-port', 'cli.log-dir', 'cli.log-enabled',
          'cli.logfile-timeformat', 'cli.timeout', 'cli.initial-prompt')
     {
         my $val = $self->device_attr($attr);
@@ -138,6 +138,7 @@ sub connect
     {
         my @exec_args =
             ($Gerty::external_executables{'ssh'},
+             '-o', 'Protocol=' . $self->{'attr'}{'cli.ssh-protocol'},
              '-o', 'NumberOfPasswordPrompts=1',
              '-o', 'UserKnownHostsFile=/dev/null',
              '-o', 'StrictHostKeyChecking=no',
