@@ -180,6 +180,7 @@ sub connect
     }
     
     $Gerty::log->debug('Logged in at ' . $ipaddr);
+    $exp->clear_accum();
     $self->{'expect'} = $exp;
     return $exp;
 }
