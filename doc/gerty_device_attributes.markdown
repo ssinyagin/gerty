@@ -78,7 +78,12 @@ Optional attributes
 module names which are called to process the results of the action.
 
 * __admin-mode__: if set to true value, the command handler tries to enter 
-  into administrative mode (*enable* in Cisco terms). 
+  into administrative mode (*enable* in Cisco terms).
+
+* __domain-name__: if ADDRESS is missing in device list, gerty tries to
+  resolve the device SYSNAME in DNS. If SYSNAME does not contain dots,
+  Gerty will try appending the value of `domain-name` for DNS
+  resolution.
 
 
 
