@@ -256,7 +256,29 @@ sub do_action
             return $result;
         }
     }
-    
+
+    my $excl = $self->device_attr($action . '.exclude');
+    if( defined($excl) )
+    {
+        foreach my $pattern_name (split(/\s*,\s*/o, $excl))
+        {
+            my $regexp = $self->device_attr($pattern_name . '.regexp');
+            if( defined($regexp) )
+            {
+                $content =~ s/$regexp//m;
+            }
+            else
+            {
+                my $err = $action . '.exclude points to ' .
+                    $pattern_name . ', but parameter ' . $pattern_name .
+                    '.regexp is not defined for ' .
+                    $self->sysname;                    
+                $Gerty::log->error($err);
+                return {'success' => 0, 'content' => $err};
+            }
+        }
+    }
+
     return {'success' => 1, 'content' => $content};
 }
 

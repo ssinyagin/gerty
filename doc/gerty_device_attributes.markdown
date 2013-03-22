@@ -207,6 +207,11 @@ Optional parameters:
   
 * __cli.error-regexp__: regular expression that identifies an error message in
    the command output. *Gerty.CiscoLike.ini* defines it as `^\%`
+
+* __XXX.exclude__: comma-separated list of pattern names (YYY) that will
+  be applied to the command output. For each pattern name, an attribute
+  __YYY.regexp__ defines a Perl-style regular expression that will be
+  applied to the multiline content.
   
 
 Gerty::CLI::CiscoLike command handler
