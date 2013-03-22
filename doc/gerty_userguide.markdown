@@ -269,6 +269,35 @@ Also it specifies an alternative path for output:
       company.intrdiags.path =  ${datapath}/output/cpe/diag
 
 
+### Result post-processing
+
+By default, actions produce results which are stored in text data files
+(typically in JSON format). You may also want to process these results
+on the fly, right after they have been retrieved. Most often the results
+need to be stored in a database.
+
+Many task-specific modules also provide the means for
+post-processing. For example the GP_Juniper plugin delivers a Perl class
+which stores the job results in an SQL database. In order to use it, you
+need to supply the action with additional attributes: `update-db` tells
+that the results need to be stored in a database, and
+`postprocess.dblink` points to the DB connection instance.
+
+The following example is collecting the VPLS MAC statistics from Juniper
+devices and stores them in a database:
+
+    ; File: /opt/gerty/Company/devclasses/Company.JuniperPE.ini
+    [devclass Company.JuniperPE]
+      inherit = GP_Juniper.Netconf.JunOS
+      do.junos.get-vpls-mac-counts = 1
+      +junos.get-vpls-mac-counts.postprocess-handlers = GP_Juniper::Netconf::Postprocess::JunOSDBStore
+      junos.get-vpls-mac-counts.update-db = 1
+      junos.get-vpls-mac-counts.postprocess.dblink = ourtestdb
+      netconf.auth-username = foo
+      netconf.auth-password = bar
+
+
+
 ### Job execution
 
 As soon as the job definition and siteconfig are ready, you may run
