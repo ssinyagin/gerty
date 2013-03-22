@@ -59,8 +59,10 @@ sub register_action_processors
 }
     
 
-# Expects a hash reference:
+# Expects a hash reference. If a column is of SQL datetime type, then:
 #  {'action name' => [{table=>x, sysname_column=>y, date_column=>z}, ...]}
+# If a column is a UNIX timestamp, then additional key is required:
+#  unix_timestamp => 1
 sub register_action_dbcleanup
 {
     my $self = shift;
@@ -183,15 +185,18 @@ sub process_result
                              $keep_days . ' days ');
                     }
 
-                    my $upto_date = $dblink->sql_unixtime_string
-                        (time() - $keep_days*86400);
+                    my $upto_date = time() - $keep_days*86400;
                     
                     foreach my $tabledef
                         (@{$self->{'action_dbcleanup'}{$action}})
                     {
+                        my $d = $tabledef->{'unix_timestamp'} ?
+                            $upto_date :
+                            $dblink->sql_unixtime_string($upto_date);
+                        
                         my $where =
                             ' WHERE ' . $tabledef->{'date_column'} . '<' .
-                            $upto_date . ' AND ' .
+                            $d . ' AND ' .
                             $tabledef->{'sysname_column'} . '=\'' .
                             $self->sysname . '\'';
                         
