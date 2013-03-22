@@ -62,13 +62,15 @@ Mandatory attributes in [devices ...]
   some other types implemented in plugins or in site-specific Perl modules.
   
 * __source.fields__: comma-separated list of keywords. The list driver 
-  fetches arraus of values, and this parameter defines in which order these 
+  fetches arrays of values, and this parameter defines in which order these 
   values should be interpreted. Valid keywords are: 
   + *SYSNAME*: defines a device name
   + *ADDRESS*: defines an IPv4 or IPv6 address. If not specified, gerty tries 
     to look up the device name in DNS
   + *DEVCLASS*: device class that overrides the default class for this list
   + *DESCRIPTION*: optional free-text description
+  + *any valid attribute name*: this field will define a device-specific
+    attribute
 
 * __devclass__: default device class assigned to all devices in this list. 
   It may be overwritten by device-specific *DEVCLASS* field.

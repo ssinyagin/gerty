@@ -26,7 +26,9 @@ Values of normal attributes are derived in a hierarchical manner, as follows:
    defined in device lists.
 6. The *[job]* section in Job definition file may override attributes defined 
    at the siteconfig level.
-7. If the value is not found during previous steps, they are repeated 
+7. The *source.fields* attribute in the device list may define fields which
+   will deliver device-specific attributes.
+8. If the value is not found during previous steps, they are repeated 
    by adding `:default` suffix to the attribute name. This allows 
    setting more specfic values to device lists or classes.
 

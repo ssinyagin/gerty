@@ -197,8 +197,17 @@ sub retrieve_device_attr
                            '" for device "' . $dev->{'SYSNAME'} . '"');
     }
     
-    # First look up at the job level
-    my $ret = $self->attr($attr);
+    # First look up at the device level
+    my $ret = $dev->{$attr};
+    if( defined($ret) )
+    {
+        $Gerty::log->debug('Retrieved "' . $attr .
+                           '"="' . $ret . '" from device level');
+        return $ret;
+    }
+
+    # Look up at the job level
+    $ret = $self->attr($attr);
     if( defined($ret) )
     {
         $Gerty::log->debug('Retrieved "' . $attr .
@@ -254,8 +263,17 @@ sub retrieve_additive_attr
                            $attr . '" for device "' . $dev->{'SYSNAME'} . '"');
     }
     
-    # First look up at the job level
-    my $v = $self->attr($attr);
+    # First look up at the device level
+    my $v = $dev->{$attr};
+    if( defined($v) )
+    {
+        $Gerty::log->debug('Found "' . $attr .
+                           '"="' . $v . '" at the device level');
+        push(@values, $v);
+    }
+
+    # Look up at the job level
+    $v = $self->attr($attr);
     if( defined($v) )
     {
         $Gerty::log->debug('Found "' . $attr .
