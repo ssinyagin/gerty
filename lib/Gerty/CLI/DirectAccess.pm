@@ -260,6 +260,7 @@ sub _login_ssh
     my $exp = shift;
 
     # Handle unknown host and password
+    my $login = $self->{'attr'}{'cli.auth-username'};
     my $password = $self->{'attr'}{'cli.auth-password'};
     my $timeout =  $self->{'attr'}{'cli.timeout'};
     my $prompt = $self->{'attr'}{'cli.initial-prompt'};
@@ -272,6 +273,8 @@ sub _login_ssh
               $exp->send("yes\r"); exp_continue;}],
           ['-re', qr/password:/i, sub {
               $exp->send($password . "\r"); exp_continue;}],
+          ['-re', qr/user:/i, sub {
+              $exp->send($login . "\r"); exp_continue;}],
           ['-re', $prompt],
           ['timeout', sub {$failure = 'Connection timeout'}],
           ['-re', qr/connection .*closed/i,
