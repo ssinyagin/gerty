@@ -259,7 +259,9 @@ sub _login_ssh
     my $self = shift;
     my $exp = shift;
 
-    # Handle unknown host and password
+    # Handle unknown host and password. Some SSH servers don't recognize
+    # SSH username and ask for the username during the session
+    my $login = $self->{'attr'}{'cli.auth-username'};
     my $password = $self->{'attr'}{'cli.auth-password'};
     my $timeout =  $self->{'attr'}{'cli.timeout'};
     my $prompt = $self->{'attr'}{'cli.initial-prompt'};
@@ -270,6 +272,10 @@ sub _login_ssh
         ( $timeout,
           ['-re', qr/yes\/no.*/i, sub {
               $exp->send("yes\r"); exp_continue;}],
+          ['-re', qr/login:/i, sub {
+              $exp->send($login . "\r"); exp_continue;}],
+          ['-re', qr/name:/i, sub {
+              $exp->send($login . "\r"); exp_continue;}],
           ['-re', qr/password:/i, sub {
               $exp->send($password . "\r"); exp_continue;}],
           ['-re', $prompt],
