@@ -57,6 +57,39 @@ sub new
         }
         $self->{$param} = $val;
     }
+
+    if( lc($self->{'dsn'}) =~ /^dbi:oracle:/ )
+    {
+        my $attr = $self->{'dblink'} . '.oracle-home';
+        my $val = $self->device_attr($attr);
+        if( defined($val) )
+        {
+            $Gerty::log->debug('Setting environment ORACLE_HOME=' . $val);
+            $ENV{'ORACLE_HOME'} = $val;
+        }
+        else
+        {
+            $Gerty::log->warn
+                ($attr . ' is not defined, hopefully DBD::Oracle ' .
+                 'will find the libraries by itself');
+        }
+
+        my %ora_variables =
+            ('tns-admin' => 'TNS_ADMIN',
+             'oracle-sid' => 'ORACLE_SID',
+             'two-task' => 'TWO_TASK');
+        
+        while( my($suffix, $env) = each %ora_variables )
+        {
+            $attr = $self->{'dblink'} . '.' . $suffix;
+            $val = $self->device_attr($attr);
+            if( defined($val) )
+            {
+                $Gerty::log->debug('Setting environment ' . $env . '=' . $val);
+                $ENV{$env} = $val;
+            }
+        }
+    }
     
     return $self;
 }

@@ -309,6 +309,39 @@ Mandatory attributes:
 modules for NETCONF actions.
 
 
+Gerty::DBLink, the database connection handler
+----------------------------------------------
+
+Some postprocessing modules use SQL databases to store their
+results. The module *Gerty::PostprocessDBUpdate* provides a parent
+class for such postprocessing, and it uses the attribute
+*ACTION.postprocess.dblink* for each specific action to specify the
+database link. For each database link name (DBLINK), the following
+attributes are mandatory:
+
+* __DBLINK.dsn__: the data source string, as described in DBI Perl
+  module. Examples are "DBI:Oracle:OURDB1",
+  "DBI:mysql:database=test;host=localhost".
+
+
+* __DBLINK.username__: the database user name
+
+* __DBLINK.password__: the database user password
+
+The following attribute names are recognized for Oracle database
+connections and they set the corresponding environment variables:
+
+* __DBLINK.oracle-home__: sets the value of ORACLE_HOME
+
+* __DBLINK.tns-admin__: sets the value of TNS_ADMIN
+
+* __DBLINK.oracle-sid__: sets the value of ORACLE_SID
+
+* __DBLINK.two-task__: sets the value of TWO_TASK
+
+
+
+
   
 
 
