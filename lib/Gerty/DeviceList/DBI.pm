@@ -52,6 +52,39 @@ sub retrieve_devices
 {
     my $self = shift;
 
+    if( lc($self->{'options'}{'source.dsn'}) =~ /^dbi:oracle:/ )
+    {
+        my $attr = 'source.oracle-home';
+        my $val = $self->{'options'}{$attr};
+        if( defined($val) )
+        {
+            $Gerty::log->debug('Setting environment ORACLE_HOME=' . $val);
+            $ENV{'ORACLE_HOME'} = $val;
+        }
+        else
+        {
+            $Gerty::log->warn
+                ($attr . ' is not defined, hopefully DBD::Oracle ' .
+                 'will find the libraries by itself');
+        }
+
+        my %ora_variables =
+            ('tns-admin' => 'TNS_ADMIN',
+             'oracle-sid' => 'ORACLE_SID',
+             'two-task' => 'TWO_TASK');
+        
+        while( my($suffix, $env) = each %ora_variables )
+        {
+            $attr = 'source.' . $suffix;
+            $val = $self->{'options'}{$attr};
+            if( defined($val) )
+            {
+                $Gerty::log->debug('Setting environment ' . $env . '=' . $val);
+                $ENV{$env} = $val;
+            }
+        }
+    }
+
     $Gerty::log->debug('Gerty::DeviceList::DBI - processing SQL query: ' .
                        $self->{'options'}{'source.query'});
 
