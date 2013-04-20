@@ -276,6 +276,8 @@ sub _login_ssh
               $exp->send($login . "\r"); exp_continue;}],
           ['-re', qr/name:/i, sub {
               $exp->send($login . "\r"); exp_continue;}],
+          ['-re', qr/user:/i, sub {
+              $exp->send($login . "\r"); exp_continue;}],
           ['-re', qr/password:/i, sub {
               $exp->send($password . "\r"); exp_continue;}],
           ['-re', $prompt],
