@@ -161,18 +161,22 @@ sub prepare_for_action
     # unlink previous success or failure status and optionally the
     # previous output
 
-    $self->{'status_fname_prefix'} =
+    $self->{'status_fname_prefix'}{$action} =
         $self->{'action_statuspath'}{$action} . '/' .
         $self->sysname . '.' . $action . '.';
     
     my @unlink_files =
-        ($self->{'status_fname_prefix'} . $self->{'output.failure-suffix'},
-         $self->{'status_fname_prefix'} . $self->{'output.success-suffix'} );
+        ($self->{'status_fname_prefix'}{$action} .
+         $self->{'output.failure-suffix'},
+         
+         $self->{'status_fname_prefix'}{$action} .
+         $self->{'output.success-suffix'} );
     
     foreach my $fname ( @unlink_files )
     {
         if( -f $fname )
         {
+            $Gerty::log->debug('Deleting file: ' . $fname);
             if( not unlink($fname) )
             {
                 $Gerty::log->critical
@@ -218,7 +222,7 @@ sub action_finished
         
         # Create an empty success status file
         
-        my $status_fname = $self->{'status_fname_prefix'} .
+        my $status_fname = $self->{'status_fname_prefix'}{$action} .
             $self->{'output.success-suffix'};
         
         my $fh = new IO::File($status_fname, 'w');
@@ -249,7 +253,7 @@ sub action_finished
         }
 
         # Write the failure message into the status file
-        my $status_fname = $self->{'status_fname_prefix'} .
+        my $status_fname = $self->{'status_fname_prefix'}{$action} .
             $self->{'output.failure-suffix'};
         
         my $fh = new IO::File($status_fname, 'w');
