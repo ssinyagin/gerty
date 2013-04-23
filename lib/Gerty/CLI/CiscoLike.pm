@@ -47,7 +47,7 @@ sub init
     
     if( (not $admin_already) and $self->{'admin-mode'} )
     {
-        my $epasswd = $self->device_attr('cli.auth-epassword');
+        my $epasswd = $self->device_credentials_attr('cli.auth-epassword');
         if( not defined( $epasswd ) )
         {
             $Gerty::log->error
