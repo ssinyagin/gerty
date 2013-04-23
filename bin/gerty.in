@@ -25,7 +25,7 @@ use Getopt::Long;
 use Log::Handler;
 
 # command-line comands. This array can be extended by plugins
-@Gerty::cli_loadmodules = ('run');
+@Gerty::cli_loadmodules = ('Gerty::Runcmd::run');
 
 # each command line execution module should register itself here
 %Gerty::cmd_registry = ();
@@ -63,11 +63,10 @@ $Gerty::external_executables{'telnet'} = '@TELNET@';
 {
     foreach my $module ( sort @Gerty::cli_loadmodules )
     {        
-        my $cmd_class = 'Gerty::Runcmd::' . $module;
-        eval(sprintf('require %s', $cmd_class));
+        eval(sprintf('require %s', $module));
         if( $@ )
         {
-            print STDERR "Error loading " . $cmd_class . ": " . $@ . "\n";
+            print STDERR "Error loading " . $module . ": " . $@ . "\n";
             exit 1;
         }
     }
