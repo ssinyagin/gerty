@@ -265,7 +265,7 @@ sub do_action
             my $regexp = $self->device_attr($pattern_name . '.regexp');
             if( defined($regexp) )
             {
-                $content =~ s/$regexp//m;
+                $content =~ s/$regexp//mg;
             }
             else
             {
