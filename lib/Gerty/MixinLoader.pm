@@ -112,7 +112,7 @@ sub supported_actions
     my $self = shift;
 
     my $ret = [];
-    push( @{$ret}, sort keys %{$self->{'mixin_actions'}} );
+    push( @{$ret}, keys %{$self->{'mixin_actions'}} );
     return $ret;
 }
 
