@@ -241,6 +241,18 @@ Mandatory attributes:
   corresponding command is defined in the attribute *pager-off.command*, set 
   to `terminal length 0`.
 
+* __cli.cli.more-prompt__: regular expresion of the prompt, when paging is enabled.
+  Default: -+\s?More\s?-+
+
+* __cli.more-prompt-continue__: the character sequence to continue, when stopped on MORE prompt
+  Default: none
+
+* __cli.more-prompt-continue-space__: overides the continue character with the SPACE
+  Default: 1
+
+* __cli.more-prompt-clean__: regular expresion for cleaning the output when paging is enabled.
+  Default: \s*\x08+\s+\x08+
+
 * __config-backup.command__: command that prints the current device 
   configuration. Default: `show running-config`.
 
