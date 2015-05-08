@@ -49,7 +49,8 @@ sub new
     foreach my $attr
         ( 'admin-mode', 'cli.timeout', 'cli.user-prompt', 'cli.admin-prompt',
           'cli.comment-string', '+cli.command-actions', 'cli.error-regexp',
-          '+cli.handler-mixins')
+          '+cli.handler-mixins', 'cli.more-prompt', 'cli.more-prompt-continue',
+          'cli.more-prompt-continue-space', 'cli.more-prompt-clean')
     {
         $self->{$attr} = $self->device_attr($attr);
     }
@@ -125,7 +126,11 @@ sub new
                  $self->mixin_origin($action));
         }
     }
-    
+  
+    if ( $self->{'cli.more-prompt-continue-space'}) {
+        $self->{'cli.more-prompt-continue'} = ' ';
+    }
+
     return $self;
 }
 
@@ -162,6 +167,7 @@ sub exec_command
     $exp->send($cmd . "\r");    
     my $result = $exp->expect
         ( $self->{'cli.timeout'},
+          ['-re', $self->{'cli.more-prompt'},sub {$exp->send($self->{'cli.more-prompt-continue'});$exp->set_accum($exp->before());exp_continue;}],
           ['-re', $self->{'prompt'}],
           ['timeout', sub {$failure = 'Connection timeout'}],
           ['eof', sub {$failure = 'Connection closed'}]);
@@ -186,6 +192,8 @@ sub exec_command
 
     my $content = $exp->before();
     $content =~ s/\r\n/\n/ogm;
+
+    $content =~ s/$self->{'cli.more-prompt-clean'}//gm;
 
     # outcomment the command from the top if it was echoed
     if( index($content, $cmd) == 0 and defined($self->{'cli.comment-string'}) )
