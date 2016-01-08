@@ -29,7 +29,8 @@ use Date::Format;
 
 my %known_access_methods =
     ('ssh' => 1,
-     'telnet' => 1);
+     'telnet' => 1,
+     'ssh_then_telnet' => 1);
 
 
      
@@ -127,63 +128,109 @@ sub new
 sub connect
 {
     my $self = shift;
-
-    my $exp = $self->_open_expect();
     
     my $method = $self->{'attr'}{'cli.access-method'};            
     my $ipaddr = $self->device->{'ADDRESS'};
     
-    $Gerty::log->debug('Connecting to ' . $ipaddr . ' with ' . $method);
+    $Gerty::log->info('Connecting to ' . $ipaddr . ' with ' . $method);
 
-    if( $method eq 'ssh' )
+    my $exp;
+    
+    if( $method eq 'ssh_then_telnet' )
     {
-        my @exec_args =
-            ($Gerty::external_executables{'ssh'},
-             '-o', 'Protocol=' . $self->{'attr'}{'cli.ssh-protocol'},
-             '-o', 'NumberOfPasswordPrompts=1',
-             '-o', 'UserKnownHostsFile=/dev/null',
-             '-o', 'StrictHostKeyChecking=no',
-             '-p', $self->{'attr'}{'cli.ssh-port'},
-             '-l', $self->{'attr'}{'cli.auth-username'},
-             $ipaddr);
-
-        if( not $exp->spawn(@exec_args) )
+        $exp = $self->_connect_ssh($ipaddr);
+        
+        if( not $exp )
         {
-            $Gerty::log->error('Failed spawning command "' .
-                               join(' ', @exec_args) . '": ' . $!);
-            return undef;
+            $Gerty::log->info('Could not connect with ssh to ' . $ipaddr .
+                              ', trying telnet');
+
+            $exp = $self->_connect_telnet($ipaddr);
         }
-
-        if( not $self->_login_ssh($exp) )
-        {
-            return undef;
-        }        
+    }
+    elsif( $method eq 'ssh' )
+    {
+        $exp = $self->_connect_ssh($ipaddr);
     }
     elsif( $method eq 'telnet' )
     {
-        my @exec_args =
-            ($Gerty::external_executables{'telnet'},
-             $ipaddr,
-             $self->{'attr'}{'cli.telnet-port'});
-        
-        if( not $exp->spawn(@exec_args) )
-        {
-            $Gerty::log->error('Failed spawning command "' .
-                               join(' ', @exec_args) . '": ' . $!);
-            return undef;
-        }
-
-        if( not $self->_login_telnet($exp) )
-        {
-            return undef;
-        }        
+        $exp = $self->_connect_telnet($ipaddr);
     }
     
+    if( not $exp )
+    {
+        return undef;
+    }
+        
     $Gerty::log->debug('Logged in at ' . $ipaddr);
     $exp->clear_accum();
     $self->{'expect'} = $exp;
     return $exp;
 }
+
+
+sub _connect_ssh
+{
+    my $self = shift;
+    my $ipaddr = shift;
+
+    my $exp = $self->_open_expect();
+    $Gerty::log->info('Connecting to ' . $ipaddr . ' with ssh');
+
+    my @exec_args =
+        ($Gerty::external_executables{'ssh'},
+         '-o', 'Protocol=' . $self->{'attr'}{'cli.ssh-protocol'},
+         '-o', 'NumberOfPasswordPrompts=1',
+         '-o', 'UserKnownHostsFile=/dev/null',
+         '-o', 'StrictHostKeyChecking=no',
+         '-p', $self->{'attr'}{'cli.ssh-port'},
+         '-l', $self->{'attr'}{'cli.auth-username'},
+         $ipaddr);
+    
+    if( not $exp->spawn(@exec_args) )
+    {
+        $Gerty::log->error('Failed spawning command "' .
+                           join(' ', @exec_args) . '": ' . $!);
+        return undef;
+    }
+    
+    if( not $self->_login_ssh($exp) )
+    {
+        return undef;
+    }
+
+    return $exp;
+}
+    
+
+sub _connect_telnet
+{
+    my $self = shift;
+    my $ipaddr = shift;
+
+    my $exp = $self->_open_expect();
+    $Gerty::log->info('Connecting to ' . $ipaddr . ' with telnet');
+
+    my @exec_args =
+        ($Gerty::external_executables{'telnet'},
+         $ipaddr,
+         $self->{'attr'}{'cli.telnet-port'});
+    
+    if( not $exp->spawn(@exec_args) )
+    {
+        $Gerty::log->error('Failed spawning command "' .
+                           join(' ', @exec_args) . '": ' . $!);
+        return undef;
+    }
+    
+    if( not $self->_login_telnet($exp) )
+    {
+        return undef;
+    }
+
+    return $exp;
+}
+    
 
 
 sub close
@@ -331,7 +378,7 @@ sub _login_telnet
               exp_continue; }],
           ['-re', qr/login:/i, sub {
               $exp->send($login . "\r"); exp_continue;}],
-          ['-re', qr/name:/i, sub {
+          ['-re', qr/username:/i, sub {
               $exp->send($login . "\r"); exp_continue;}],
           ['-re', qr/password:/i, sub {
               $exp->send($password . "\r"); exp_continue;}],

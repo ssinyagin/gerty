@@ -126,7 +126,7 @@ Default values are specified in *Gerty.Default.ini*.
 Mandatory attributes:
 
 * __cli.access-method__: CLI access protocol. Currently supported: `ssh`, 
-`telnet`.
+`telnet`, `ssh_then_telnet`.
 
 * __cli.ssh-protocol__ [2]: Specifies the SSH protocol versions in order
   of preference. Possible values are *1* and *2*. Multiple versions must
