@@ -137,6 +137,9 @@ Mandatory attributes:
 
 * __cli.timeout__ [15]: defines the command-line timeout in seconds.
 
+* __cli.prompt-timeout__ [1]: the time to wait for the prompt after
+  entering an empty command on the device.
+
 * __cli.initial-prompt__: Regular expression that is used to identify the 
   command-line prompt immediately after logging in. Default: `^.+[\#\>\$]`.
 

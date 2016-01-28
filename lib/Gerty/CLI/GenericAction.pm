@@ -50,12 +50,11 @@ sub new
         ( 'admin-mode', 'cli.timeout', 'cli.user-prompt', 'cli.admin-prompt',
           'cli.comment-string', '+cli.command-actions', 'cli.error-regexp',
           '+cli.handler-mixins', 'cli.more-prompt', 'cli.more-prompt-continue',
-          'cli.more-prompt-continue-space', 'cli.more-prompt-clean')
+          'cli.more-prompt-continue-space', 'cli.more-prompt-clean',
+          'cli.prompt-timeout')
     {
         $self->{$attr} = $self->device_attr($attr);
     }
-
-    $self->{'prompt'} = $self->{'cli.user-prompt'};
 
     $self->{'command_actions'} = {};
     if( defined( $self->{'+cli.command-actions'} ) )        
@@ -131,6 +130,11 @@ sub new
         $self->{'cli.more-prompt-continue'} = ' ';
     }
 
+    if( not defined($self->{'cli.prompt-timeout'}) )
+    {
+        $self->{'cli.prompt-timeout'} = 1;
+    }
+    
     return $self;
 }
 
@@ -139,6 +143,32 @@ sub new
 sub init
 {
     my $self = shift;
+
+    # send \r and derive the primpt string
+    
+    my $failure;
+    my $exp = $self->expect;
+    $exp->clear_accum();
+    $exp->send("\r");
+
+    my $result = $exp->expect
+        ( $self->{'cli.prompt-timeout'},
+          ['eof', sub {$failure = 'Connection closed'}]);
+    
+    
+    if( defined($failure) )
+    {
+        my $err = 'Failed waiting for prompt for ' .
+            $self->sysname . ': ' . $failure;
+        
+        $Gerty::log->error($err);
+        return undef;
+    }
+
+    $self->{'prompt'} = $exp->before();
+    $Gerty::log->debug('Set prompt to "' . $self->{'prompt'} . '" for "' .
+                       $self->sysname . '"');
+    
     return 1;
 }
 
@@ -163,12 +193,16 @@ sub exec_command
 
     $Gerty::log->debug('Running a command: "' . $cmd . '" on "' .
                        $self->sysname . '"');
-    
+
+    $exp->clear_accum();
     $exp->send($cmd . "\r");    
     my $result = $exp->expect
         ( $self->{'cli.timeout'},
-          ['-re', $self->{'cli.more-prompt'},sub {$exp->send($self->{'cli.more-prompt-continue'});$exp->set_accum($exp->before());exp_continue;}],
-          ['-re', $self->{'prompt'}],
+          ['-re', $self->{'cli.more-prompt'},
+           sub {$exp->send($self->{'cli.more-prompt-continue'});
+                $exp->set_accum($exp->before());
+                exp_continue;}],
+          ['-ex', $self->{'prompt'}],
           ['timeout', sub {$failure = 'Connection timeout'}],
           ['eof', sub {$failure = 'Connection closed'}]);
     

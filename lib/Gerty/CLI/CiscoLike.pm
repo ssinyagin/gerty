@@ -39,12 +39,7 @@ sub init
     {
         return undef;
     }
-    
-    if( $admin_already )
-    {
-        $self->{'prompt'} = $self->{'cli.admin-prompt'};
-    }    
-    
+        
     if( (not $admin_already) and $self->{'admin-mode'} )
     {
         my $epasswd = $self->device_credentials_attr('cli.auth-epassword');
@@ -62,10 +57,9 @@ sub init
                 ('Failed to switch into enable mode for ' . $self->sysname);
             return undef;
         }
-        
-        $self->{'prompt'} = $self->{'cli.admin-prompt'};
     }
     
+    $self->SUPER::init();
     
     my @cmd;
     foreach my $item (split(/\s*,\s*/o,
@@ -94,7 +88,7 @@ sub init
             return undef;
         }
     }
-    
+
     return 1;
 }
 

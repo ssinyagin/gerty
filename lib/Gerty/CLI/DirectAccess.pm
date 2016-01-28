@@ -321,7 +321,7 @@ sub _login_ssh
               $exp->send("yes\r"); exp_continue;}],
           ['-re', qr/login:/i, sub {
               $exp->send($login . "\r"); exp_continue;}],
-          ['-re', qr/name:/i, sub {
+          ['-re', qr/username:/i, sub {
               $exp->send($login . "\r"); exp_continue;}],
           ['-re', qr/user:/i, sub {
               $exp->send($login . "\r"); exp_continue;}],
