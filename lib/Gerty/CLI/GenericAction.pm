@@ -145,31 +145,53 @@ sub init
     my $self = shift;
 
     # send \r and derive the primpt string
-    
-    my $failure;
-    my $exp = $self->expect;
-    $exp->clear_accum();
-    $exp->send("\r");
 
-    my $result = $exp->expect
-        ( $self->{'cli.prompt-timeout'},
-          ['eof', sub {$failure = 'Connection closed'}]);
-    
-    
-    if( defined($failure) )
+    my $trials = 5;
+    while( $trials-- > 0 )
     {
-        my $err = 'Failed waiting for prompt for ' .
-            $self->sysname . ': ' . $failure;
+        my $failure;
+        my $exp = $self->expect;
+        $exp->clear_accum();
+        $exp->send("\r");
         
-        $Gerty::log->error($err);
-        return undef;
-    }
+        my $result = $exp->expect
+            ( $self->{'cli.prompt-timeout'},
+              ['eof', sub {$failure = 'Connection closed'}]);
+        
+        
+        if( defined($failure) )
+        {
+            my $err = 'Failed waiting for prompt for ' .
+                $self->sysname . ': ' . $failure;
+            
+            $Gerty::log->error($err);
+            return undef;
+        }
 
-    $self->{'prompt'} = $exp->before();
-    $Gerty::log->debug('Set prompt to "' . $self->{'prompt'} . '" for "' .
-                       $self->sysname . '"');
-    
-    return 1;
+        my $candidate = $exp->before();
+        $candidate =~ s/.*\r//ms;
+        $candidate =~ s/.*\n//ms;
+        
+        if( $candidate =~ $self->{'cli.user-prompt'} or
+            $candidate =~ $self->{'cli.admin-prompt'} )
+        {
+            $self->{'prompt'} = $candidate;
+            $Gerty::log->debug('Set prompt to "' . $candidate .
+                               '" for "' . $self->sysname . '"');
+            return 1;
+        }
+        else
+        {
+            $Gerty::log->debug('The candidate prompt string "' .
+                               $candidate .
+                               '" does match prompt RE for "' .
+                               $self->sysname . '"');
+        }
+    }
+        
+    my $err = 'Could not derive the proimpt string for ' . $self->sysname;
+    $Gerty::log->error($err);
+    return undef;
 }
 
 
