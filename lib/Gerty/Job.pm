@@ -559,6 +559,7 @@ sub execute
                            ': ' . join(', ', @{$supported_actions}));
         
         my @enabled_actions;
+        my %unsorted_enabled_actions;
         
         foreach my $action (@{$supported_actions})
         {
@@ -566,8 +567,15 @@ sub execute
                 $output_handler->check_action_attributes($action) and
                 $output_handler->prepare_for_action($action) )
             {
-                push(@enabled_actions, $action);
+                my $priority =$self->device_attr($dev, 'priority.' . $action);
+		        $priority="none" unless (defined $priority);
+		        $unsorted_enabled_actions{$priority}=[] unless (exists $unsorted_enabled_actions{$priority});
+		        push(@{$unsorted_enabled_actions{$priority}}, $action);
             }
+        }
+        foreach my $priority (sort keys %unsorted_enabled_actions)
+        {
+            push(@enabled_actions, sort @{$unsorted_enabled_actions{$priority}});
         }
 
         if( scalar(@enabled_actions) == 0 )
