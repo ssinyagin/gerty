@@ -149,6 +149,7 @@ sub execute
         {
             my $proc = $i % $nprocesses;
             push( @{$proc_dev[$proc]}, $dev );
+            $Gerty::log->debug($dev->{'SYSNAME'} . ' goes to child #' . $proc);
             $i++;
         }
 

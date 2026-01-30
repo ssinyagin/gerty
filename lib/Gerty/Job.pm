@@ -538,6 +538,7 @@ sub execute
 
     foreach my $dev (@{$devices})
     {
+        $Gerty::log->debug('Executing for ' . $dev->{'SYSNAME'});
         my $action_handler = $self->load_and_execute
             ($dev, 'job.action-handler', 'new',
              {'job' => $self, 'device' => $dev});
